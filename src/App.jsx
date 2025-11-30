@@ -357,6 +357,73 @@ const ReorderList = ({ entries, onReorder, onExit }) => {
   );
 };
 
+// 全局搜索弹窗
+const SearchModal = ({ isOpen, onClose, query, setQuery, results, onSearch, onResultClick }) => {
+  const inputRef = useRef(null);
+  
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(query);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [query, onSearch]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="search-modal-overlay" onClick={onClose}>
+      <div className="search-modal" onClick={e => e.stopPropagation()}>
+        <div className="search-header">
+          <div className="search-input-wrap">
+            <span className="search-icon">🔍</span>
+            <input
+              ref={inputRef}
+              type="text"
+              className="search-input"
+              placeholder="搜索词条、内容..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+            {query && (
+              <button className="search-clear" onClick={() => setQuery('')}>×</button>
+            )}
+          </div>
+          <button className="search-cancel" onClick={onClose}>取消</button>
+        </div>
+        
+        <div className="search-results">
+          {query && results.length === 0 && (
+            <div className="search-empty">
+              <span>✨</span>
+              <p>未找到相关内容</p>
+            </div>
+          )}
+          {results.map((r, i) => (
+            <div key={i} className="search-result-item" onClick={() => onResultClick(r)}>
+              <div className="result-icon">{r.entry.isFolder ? '📁' : '📄'}</div>
+              <div className="result-info">
+                <h4>{r.entry.title}</h4>
+                <p className="result-path">
+                  {r.book.title}
+                  {r.path.length > 0 && ` / ${r.path.map(p => p.title).join(' / ')}`}
+                </p>
+                {r.entry.summary && <p className="result-summary">{r.entry.summary}</p>}
+              </div>
+              <span className="result-arrow">›</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [data, setData] = useState(() => loadFromStorage() || initialData);
   const [currentBook, setCurrentBook] = useState(null);
@@ -375,7 +442,6 @@ export default function App() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [contextMenu, setContextMenu] = useState({ isOpen: false, position: { x: 0, y: 0 }, options: [] });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-  const [jumpHistory, setJumpHistory] = useState([]);
   const [slideAnim, setSlideAnim] = useState('');
   const [showFormatMenu, setShowFormatMenu] = useState(false);
   const [showAlignMenu, setShowAlignMenu] = useState(false);
@@ -383,6 +449,9 @@ export default function App() {
   const [currentFont, setCurrentFont] = useState("'Noto Serif SC', serif");
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, strike: false, size: 'medium' });
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const longPressTimer = useRef(null);
   const touchStartX = useRef(0);
   const editorRef = useRef(null);
@@ -407,6 +476,61 @@ export default function App() {
 
   useEffect(() => { saveToStorage(data); }, [data]);
   const allTitlesMap = useMemo(() => collectAllLinkableTitles(data.books), [data.books]);
+  
+  // 全局搜索函数
+  const performSearch = useCallback((query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const q = query.toLowerCase();
+    const results = [];
+    
+    // 递归搜索词条，返回路径
+    const searchInEntries = (entries, book, path = []) => {
+      entries.forEach(entry => {
+        const titleMatch = entry.title?.toLowerCase().includes(q);
+        const summaryMatch = entry.summary?.toLowerCase().includes(q);
+        const contentMatch = entry.content?.toLowerCase().includes(q);
+        
+        if (titleMatch || summaryMatch || contentMatch) {
+          results.push({
+            entry,
+            book,
+            path: [...path],
+            matchType: titleMatch ? 'title' : summaryMatch ? 'summary' : 'content'
+          });
+        }
+        
+        if (entry.children?.length > 0) {
+          searchInEntries(entry.children, book, [...path, entry]);
+        }
+      });
+    };
+    
+    data.books.forEach(book => {
+      searchInEntries(book.entries, book);
+    });
+    
+    setSearchResults(results);
+  }, [data.books]);
+  
+  // 点击搜索结果跳转
+  const handleSearchResultClick = (result) => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setCurrentBook(result.book);
+    setNavigationStack(result.path);
+    setCurrentEntry(result.entry);
+    if (result.entry.isFolder || result.entry.children?.length > 0) {
+      setViewMode('list');
+    } else {
+      setViewMode('single');
+      setIsReadOnly(true);
+    }
+  };
+  
   useEffect(() => { if (currentBook) { const u = data.books.find(b => b.id === currentBook.id); if (u && u !== currentBook) setCurrentBook(u); } }, [data.books]);
   useEffect(() => { if (currentEntry && currentBook) { const f = findEntryById(currentBook.entries, currentEntry.id); if (f && f !== currentEntry) setCurrentEntry(f); } }, [currentBook]);
 
@@ -423,17 +547,119 @@ export default function App() {
   const handleLongPressEnd = () => { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
 
   const handleBookSelect = (b) => { setCurrentBook(b); setCurrentEntry(null); setViewMode('list'); setNavigationStack([]); };
-  const handleBackToShelf = () => { setSlideAnim('slide-out'); setTimeout(() => { setCurrentBook(null); setCurrentEntry(null); setViewMode('list'); setNavigationStack([]); setIsSidebarOpen(false); setJumpHistory([]); setIsReorderMode(false); setSlideAnim(''); }, 200); };
+  const handleBackToShelf = () => { setSlideAnim('slide-out'); setTimeout(() => { setCurrentBook(null); setCurrentEntry(null); setViewMode('list'); setNavigationStack([]); setIsSidebarOpen(false); setIsReorderMode(false); setSlideAnim(''); }, 200); };
   const handleEntryClick = (e) => { setSlideAnim('slide-in'); setNavigationStack(prev => [...prev, currentEntry].filter(Boolean)); setCurrentEntry(e); if (e.isFolder || e.children?.length > 0) setViewMode('list'); else { setViewMode('single'); setIsReadOnly(true); } setTimeout(() => setSlideAnim(''), 250); };
-  const handleBack = () => { setSlideAnim('slide-out'); setTimeout(() => { if (navigationStack.length > 0) { const p = navigationStack[navigationStack.length - 1]; setNavigationStack(s => s.slice(0, -1)); setCurrentEntry(p); setViewMode('list'); } else { setCurrentEntry(null); setViewMode('list'); } setSlideAnim(''); setIsReorderMode(false); }, 200); };
-  const handleJumpBack = () => { if (jumpHistory.length > 0) { const l = jumpHistory[jumpHistory.length - 1]; setJumpHistory(p => p.slice(0, -1)); const b = data.books.find(x => x.id === l.bookId); if (b) { setCurrentBook(b); setNavigationStack(l.navStack); setCurrentEntry(l.entry); setViewMode(l.viewMode); } } };
+  const handleBack = () => { 
+    setSlideAnim('slide-out'); 
+    setTimeout(() => { 
+      if (navigationStack.length > 0) { 
+        const last = navigationStack[navigationStack.length - 1]; 
+        setNavigationStack(s => s.slice(0, -1)); 
+        // 检查是否是跳转记录（包含 bookId）
+        if (last.bookId) {
+          const b = data.books.find(x => x.id === last.bookId);
+          if (b) {
+            setCurrentBook(b);
+            setCurrentEntry(last.entry);
+            setViewMode(last.viewMode || 'single');
+          }
+        } else {
+          // 普通的父级导航
+          setCurrentEntry(last); 
+          setViewMode('list'); 
+        }
+      } else { 
+        setCurrentEntry(null); 
+        setViewMode('list'); 
+      } 
+      setSlideAnim(''); 
+      setIsReorderMode(false); 
+    }, 200); 
+  };
   const handleSidebarSelect = (e) => { const p = findEntryPath(currentBook.entries, e.id); if (p) { setNavigationStack(p.slice(0, -1)); setCurrentEntry(e); if (e.isFolder || e.children?.length > 0) setViewMode('list'); else setViewMode('single'); } setIsSidebarOpen(false); };
-  const handleLinkClick = useCallback((kw, tbid, teid) => { setJumpHistory(p => [...p, { bookId: currentBook.id, entry: currentEntry, navStack: navigationStack, viewMode }]); const tb = data.books.find(b => b.id === tbid); if (tb) { setSlideAnim('slide-in'); setCurrentBook(tb); const path = findEntryPath(tb.entries, teid); if (path) { const te = path[path.length - 1]; setNavigationStack(path.slice(0, -1)); setCurrentEntry(te); if (te.isFolder && te.linkable) { setViewMode('merged'); setTimeout(() => initMerged(te), 0); } else if (te.isFolder) setViewMode('list'); else setViewMode('single'); } setTimeout(() => setSlideAnim(''), 250); } }, [currentBook, currentEntry, navigationStack, viewMode, data.books, initMerged]);
+  const handleLinkClick = useCallback((kw, tbid, teid) => { 
+    // 把当前位置存入导航栈（包含完整信息以便返回）
+    const jumpRecord = { bookId: currentBook.id, entry: currentEntry, viewMode };
+    setNavigationStack(p => [...p, jumpRecord]); 
+    
+    const tb = data.books.find(b => b.id === tbid); 
+    if (tb) { 
+      setSlideAnim('slide-in'); 
+      setCurrentBook(tb); 
+      const path = findEntryPath(tb.entries, teid); 
+      if (path) { 
+        const te = path[path.length - 1]; 
+        setCurrentEntry(te); 
+        if (te.isFolder && te.linkable) { 
+          setViewMode('merged'); 
+          setTimeout(() => initMerged(te), 0); 
+        } else if (te.isFolder) setViewMode('list'); 
+        else setViewMode('single'); 
+      } 
+      setTimeout(() => setSlideAnim(''), 250); 
+    } 
+  }, [currentBook, currentEntry, viewMode, data.books, initMerged]);
 
-  const handleMergedChange = (i, f, v) => { const nc = mergedContents.map((x, j) => j === i ? { ...x, [f]: v } : x); setMergedContents(nc); if (!nc[i].isNew && f === 'content') saveContent(v, nc[i].id, currentBook.id); };
+  // 修改标题并同步更新所有【】引用
+  const handleTitleChange = (entryId, oldTitle, newTitle) => {
+    if (oldTitle === newTitle) return;
+    
+    // 递归更新所有词条内容中的【旧标题】为【新标题】
+    const updateContentRefs = (entries) => {
+      return entries.map(e => {
+        let updated = { ...e };
+        if (e.content && e.content.includes(`【${oldTitle}】`)) {
+          updated.content = e.content.replaceAll(`【${oldTitle}】`, `【${newTitle}】`);
+        }
+        if (e.children?.length > 0) {
+          updated.children = updateContentRefs(e.children);
+        }
+        return updated;
+      });
+    };
+    
+    setData(prev => ({
+      ...prev,
+      books: prev.books.map(b => ({
+        ...b,
+        entries: updateContentRefs(updateEntryInTree(b.entries, entryId, { title: newTitle }))
+      }))
+    }));
+  };
+  
+  // 修改简介
+  const handleSummaryChange = (entryId, newSummary) => {
+    setData(prev => ({
+      ...prev,
+      books: prev.books.map(b => b.id === currentBook.id ? {
+        ...b,
+        entries: updateEntryInTree(b.entries, entryId, { summary: newSummary })
+      } : b)
+    }));
+  };
+
+  const handleMergedChange = (i, f, v) => { 
+    const entry = mergedContents[i];
+    if (f === 'content') {
+      // 内容都需要保存
+      saveContent(v, entry.id, currentBook.id); 
+    } else if (f === 'title') {
+      // 标题变更
+      if (entry.isNew) {
+        // 新词条：直接更新标题
+        setData(prev => ({ ...prev, books: prev.books.map(b => b.id === currentBook.id ? { ...b, entries: updateEntryInTree(b.entries, entry.id, { title: v }) } : b) }));
+      } else if (entry.title !== v) {
+        // 已有词条：更新标题并同步所有【】引用
+        handleTitleChange(entry.id, entry.title, v);
+      }
+    }
+    // 更新本地状态，如果是新词条也要标记为非新
+    setMergedContents(nc => nc.map((x, j) => j === i ? { ...x, [f]: v, isNew: false } : x)); 
+  };
   const handleAddMerged = () => { const ne = { id: generateId(), title: '新词条', content: '', isNew: true }; setMergedContents(p => [...p, ne]); setData(prev => ({ ...prev, books: prev.books.map(b => b.id === currentBook.id ? { ...b, entries: addEntryToParent(b.entries, currentEntry.id, { ...ne, summary: '', isFolder: false, linkable: true, children: [] }) } : b) })); };
   const handleAddEntry = (d) => { const ne = { id: generateId(), title: d.title, summary: d.summary || '', content: '', isFolder: d.isFolder, linkable: !d.isFolder, children: d.isFolder ? [] : undefined }; setData(prev => ({ ...prev, books: prev.books.map(b => b.id === currentBook.id ? { ...b, entries: addEntryToParent(b.entries, currentEntry?.id || null, ne) } : b) })); };
   const handleUpdateEntry = (d) => { if (!editingEntry) return; setData(prev => ({ ...prev, books: prev.books.map(b => b.id === currentBook.id ? { ...b, entries: updateEntryInTree(b.entries, editingEntry.id, { title: d.title, summary: d.summary }) } : b) })); setEditingEntry(null); };
+  
   const handleAddBook = ({ title, author, tags, emoji, coverImage, showStats }) => { if (editingBook) { setData(prev => ({ ...prev, books: prev.books.map(b => b.id === editingBook.id ? { ...b, title, author, tags, cover: emoji, coverImage, showStats } : b) })); setEditingBook(null); } else { const colors = ['#2D3047', '#1A1A2E', '#4A0E0E', '#0E4A2D', '#3D2E4A', '#4A3D0E']; setData(prev => ({ ...prev, books: [...prev.books, { id: generateId(), title, author, tags, cover: emoji, coverImage, showStats, color: colors[Math.floor(Math.random() * colors.length)], entries: [] }] })); } };
   const handleReorder = (fi, ti) => setData(prev => ({ ...prev, books: prev.books.map(b => b.id === currentBook.id ? { ...b, entries: reorderEntriesInParent(b.entries, currentEntry?.id || null, fi, ti) } : b) }));
 
@@ -455,12 +681,17 @@ export default function App() {
   const handleEntrySwipe = (e, dx) => { if (dx < -80 && (e.isFolder || e.children?.length > 0)) { setSlideAnim('slide-in'); setNavigationStack(p => [...p, currentEntry].filter(Boolean)); setCurrentEntry(e); setViewMode('merged'); setTimeout(() => initMerged(e), 50); setTimeout(() => setSlideAnim(''), 250); } };
 
   const currentEntries = currentEntry?.children || currentBook?.entries || [];
+  
+  // 从最新数据中获取当前 entry（确保排序等更新后能同步）
+  const liveEntry = currentEntry ? findEntryById(currentBook?.entries || [], currentEntry.id) || currentEntry : null;
+  const liveChildContent = liveEntry ? getAllChildContent(liveEntry, currentBook?.entries || []) : [];
+  
   const isEditing = !isReadOnly && (viewMode === 'single' || viewMode === 'merged');
   const hasActiveFormat = activeFormats.bold || activeFormats.italic || activeFormats.underline || activeFormats.strike || activeFormats.size !== 'medium';
 
-  if (!currentBook) return (<div className="app bookshelf-view"><header className="bookshelf-header"><h1>灵感穹顶</h1><p className="subtitle">拾起每一颗星星</p><p className="subtitle">便能拥有属于你的宇宙</p></header><div className="bookshelf">{data.books.map(b => (<div key={b.id} className="book-card" style={{ '--book-color': b.color }} onClick={() => handleBookSelect(b)} onTouchStart={e => handleLongPressStart(e, 'book', b)} onTouchEnd={handleLongPressEnd} onTouchMove={handleLongPressEnd}><div className="book-spine" /><div className="book-cover">{b.coverImage ? <img src={b.coverImage} alt="" className="cover-image" /> : <span className="book-emoji">{b.cover}</span>}</div><div className="book-shadow" /><div className="book-meta"><h2>{b.title}</h2>{b.author && <p>{b.author} 著</p>}</div></div>))}<div className="book-card add-book" onClick={() => { setEditingBook(null); setShowBookModal(true); }}><div className="book-cover"><span className="add-icon">+</span></div><div className="book-meta"><h2>新建世界</h2></div></div></div><BookModal isOpen={showBookModal} onClose={() => { setShowBookModal(false); setEditingBook(null); }} onSave={handleAddBook} editingBook={editingBook} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><style>{styles}</style></div>);
+  if (!currentBook) return (<div className="app bookshelf-view"><header className="bookshelf-header"><h1>一页穹顶</h1><p className="subtitle">拾起每一颗星星</p><p className="subtitle">便能拥有属于你的宇宙</p><button className="search-star" onClick={() => setShowSearch(true)}>⭐</button></header><div className="bookshelf">{data.books.map(b => (<div key={b.id} className="book-card" style={{ '--book-color': b.color }} onClick={() => handleBookSelect(b)} onTouchStart={e => handleLongPressStart(e, 'book', b)} onTouchEnd={handleLongPressEnd} onTouchMove={handleLongPressEnd}><div className="book-spine" /><div className="book-cover">{b.coverImage ? <img src={b.coverImage} alt="" className="cover-image" /> : <span className="book-emoji">{b.cover}</span>}</div><div className="book-shadow" /><div className="book-meta"><h2>{b.title}</h2>{b.author && <p>{b.author} 著</p>}</div></div>))}<div className="book-card add-book" onClick={() => { setEditingBook(null); setShowBookModal(true); }}><div className="book-cover"><span className="add-icon">+</span></div><div className="book-meta"><h2>新建世界</h2></div></div></div><BookModal isOpen={showBookModal} onClose={() => { setShowBookModal(false); setEditingBook(null); }} onSave={handleAddBook} editingBook={editingBook} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><SearchModal isOpen={showSearch} onClose={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); }} query={searchQuery} setQuery={setSearchQuery} results={searchResults} onSearch={performSearch} onResultClick={handleSearchResultClick} /><style>{styles}</style></div>);
 
-  return (<div className="app main-view"><div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}><div className="sidebar-header"><h2>{currentBook.title}</h2><button className="close-sidebar" onClick={() => setIsSidebarOpen(false)}>×</button></div><div className="sidebar-content">{currentBook.entries.map(e => <SidebarItem key={e.id} entry={e} onSelect={handleSidebarSelect} currentId={currentEntry?.id} expandedIds={expandedIds} onToggle={id => setExpandedIds(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}</div></div>{isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />}<div className="main-content" onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={e => { if (e.changedTouches[0].clientX - touchStartX.current > 80 && (currentEntry || navigationStack.length > 0)) handleBack(); }}><header className="top-bar"><div className="top-left"><button className="icon-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>{jumpHistory.length > 0 && <button className="icon-btn jump-back-btn" onClick={handleJumpBack}>↩️</button>}{(currentEntry || navigationStack.length > 0) && <button className="icon-btn" onClick={handleBack}>←</button>}<button className="icon-btn" onClick={handleBackToShelf}>🏠</button></div><div className="breadcrumb"><span className="book-name">{currentBook.title}</span>{currentEntry && <><span className="separator">/</span><span className="current-title">{currentEntry.title}</span></>}</div><div className="top-right">{(viewMode === 'single' || viewMode === 'merged') && (<div className="read-mode-toggle" onClick={() => setIsReadOnly(!isReadOnly)}><span className={`toggle-label ${isReadOnly ? 'active' : ''}`}>阅读</span><div className={`toggle-switch ${!isReadOnly ? 'edit-mode' : ''}`}><div className="toggle-knob" /></div><span className={`toggle-label ${!isReadOnly ? 'active' : ''}`}>编辑</span></div>)}</div></header>{!currentEntry && currentBook.showStats && (<div className="book-info-card"><div className="info-cover">{currentBook.coverImage ? <img src={currentBook.coverImage} alt="" /> : <span>{currentBook.cover}</span>}</div><div className="info-details">{currentBook.author && <p>作者：{currentBook.author}</p>}{currentBook.tags?.length > 0 && <p>标签：{currentBook.tags.join('、')}</p>}<p>词条：{countEntries(currentBook.entries)}条</p><p>字数：{countWords(currentBook.entries).toLocaleString()}字</p></div></div>)}<main className={`content-area ${slideAnim}`}>{viewMode === 'list' && !isReorderMode && (<>{currentEntry && <div className="list-header"><h1>{currentEntry.title}</h1>{currentEntry.summary && <p className="summary">{currentEntry.summary}</p>}</div>}<p className="swipe-hint">💡 左滑合并视图 · 右滑返回 · 长按编辑</p><div className="entry-list">{currentEntries.map(e => { let tx = 0; return (<div key={e.id} className="entry-card" onClick={() => handleEntryClick(e)} onTouchStart={ev => { tx = ev.touches[0].clientX; handleLongPressStart(ev, 'entry', e); }} onTouchMove={handleLongPressEnd} onTouchEnd={ev => { handleLongPressEnd(); handleEntrySwipe(e, ev.changedTouches[0].clientX - tx); }}><div className="entry-icon">{e.isFolder ? '📁' : '📄'}</div><div className="entry-info"><h3>{e.title}{e.linkable && <span className="star-badge">⭐</span>}</h3><p>{e.summary}</p></div><span className="entry-arrow">›</span></div>); })}</div>{currentEntries.length === 0 && <div className="empty-state"><span>✨</span><p>点击右下角添加</p></div>}</>)}{viewMode === 'list' && isReorderMode && <ReorderList entries={currentEntries} onReorder={handleReorder} onExit={() => setIsReorderMode(false)} />}{viewMode === 'single' && currentEntry && (<div className="single-view"><div className="content-header"><h1>{currentEntry.title}</h1>{!isReadOnly && <button className="edit-meta-btn" onClick={() => { setEditingEntry(currentEntry); setShowEntryModal(true); }}>✏️</button>}</div>{isReadOnly ? <ContentRenderer content={currentEntry.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} /> : <RichEditor content={currentEntry.content} onSave={html => saveContent(html)} fontFamily={currentFont} activeFormats={activeFormats} />}</div>)}{viewMode === 'merged' && currentEntry && (<div className="merged-view"><div className="content-header merged-header"><h1>{currentEntry.title}</h1><p className="merged-hint">📖 合并视图</p></div>{isReadOnly ? (<div className="merged-content-read">{getAllChildContent(currentEntry, currentBook.entries).map((it, i, arr) => (<div key={it.id} className="merged-section"><div className="section-title" onClick={() => handleSidebarSelect(it)}>• {it.title}</div><ContentRenderer content={it.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} />{i < arr.length - 1 && <div className="section-divider" />}</div>))}</div>) : (<div className="merged-content-edit">{mergedContents.map((it, i) => (<div key={it.id} className="merged-edit-section"><div className="merged-edit-header">• <input type="text" value={it.title} onChange={ev => handleMergedChange(i, 'title', ev.target.value)} className="merged-title-input" /></div><div className="merged-editor-wrap" contentEditable dangerouslySetInnerHTML={{ __html: it.content }} onBlur={ev => handleMergedChange(i, 'content', ev.target.innerHTML)} style={{ fontFamily: currentFont }} /></div>))}<button className="add-merged-entry-btn" onClick={handleAddMerged}>+ 添加词条</button></div>)}</div>)}</main>{viewMode === 'list' && !isReorderMode && (<><button className={`fab ${showAddMenu ? 'active' : ''}`} onClick={() => setShowAddMenu(!showAddMenu)}><span style={{ transform: showAddMenu ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span></button><AddMenu isOpen={showAddMenu} onClose={() => setShowAddMenu(false)} onAddEntry={() => { setEditingEntry(null); setIsCreatingFolder(false); setShowEntryModal(true); }} onAddFolder={() => { setEditingEntry(null); setIsCreatingFolder(true); setShowEntryModal(true); }} onReorder={() => setIsReorderMode(true)} /></>)}{isEditing && <EditorToolbar onIndent={handleIndent} onFormat={() => setShowFormatMenu(true)} onAlign={() => setShowAlignMenu(true)} onFont={() => setShowFontMenu(true)} onImage={handleImageUpload} hasActive={hasActiveFormat} />}<TextFormatMenu isOpen={showFormatMenu} onClose={() => setShowFormatMenu(false)} activeFormats={activeFormats} onToggleFormat={handleToggleFormat} /><AlignMenu isOpen={showAlignMenu} onClose={() => setShowAlignMenu(false)} onAlign={handleAlign} /><FontMenu isOpen={showFontMenu} onClose={() => setShowFontMenu(false)} onSelectFont={setCurrentFont} currentFont={currentFont} /></div><EntryModal isOpen={showEntryModal} onClose={() => { setShowEntryModal(false); setEditingEntry(null); }} onSave={editingEntry ? handleUpdateEntry : handleAddEntry} editingEntry={editingEntry} parentTitle={currentEntry?.title} isFolder={isCreatingFolder} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><style>{styles}</style></div>);
+  return (<div className="app main-view"><div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}><div className="sidebar-header"><h2>{currentBook.title}</h2><button className="close-sidebar" onClick={() => setIsSidebarOpen(false)}>×</button></div><div className="sidebar-content">{currentBook.entries.map(e => <SidebarItem key={e.id} entry={e} onSelect={handleSidebarSelect} currentId={currentEntry?.id} expandedIds={expandedIds} onToggle={id => setExpandedIds(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}</div></div>{isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />}<div className="main-content" onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={e => { if (e.changedTouches[0].clientX - touchStartX.current > 80 && (currentEntry || navigationStack.length > 0)) handleBack(); }}><header className="top-bar"><div className="top-left"><button className="icon-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>{(currentEntry || navigationStack.length > 0) && <button className="icon-btn" onClick={handleBack}>←</button>}<button className="icon-btn" onClick={handleBackToShelf}>🏠</button></div><div className="breadcrumb"><span className="book-name">{currentBook.title}</span>{currentEntry && <><span className="separator">/</span><span className="current-title">{currentEntry.title}</span></>}</div><div className="top-right">{(viewMode === 'single' || viewMode === 'merged') && (<div className="read-mode-toggle" onClick={() => { if (!isReadOnly) { const ed = document.querySelector('.rich-editor'); if (ed) ed.forceSave?.(); } else if (viewMode === 'merged' && liveEntry) { initMerged(liveEntry); } setIsReadOnly(!isReadOnly); }}><span className={`toggle-label ${isReadOnly ? 'active' : ''}`}>阅读</span><div className={`toggle-switch ${!isReadOnly ? 'edit-mode' : ''}`}><div className="toggle-knob" /></div><span className={`toggle-label ${!isReadOnly ? 'active' : ''}`}>编辑</span></div>)}</div></header>{!currentEntry && currentBook.showStats && (<div className="book-info-card"><div className="info-cover">{currentBook.coverImage ? <img src={currentBook.coverImage} alt="" /> : <span>{currentBook.cover}</span>}</div><div className="info-details">{currentBook.author && <p>作者：{currentBook.author}</p>}{currentBook.tags?.length > 0 && <p>标签：{currentBook.tags.join('、')}</p>}<p>词条：{countEntries(currentBook.entries)}条</p><p>字数：{countWords(currentBook.entries).toLocaleString()}字</p></div></div>)}<main className={`content-area ${slideAnim}`}>{viewMode === 'list' && !isReorderMode && (<>{currentEntry && <div className="list-header"><h1>{currentEntry.title}</h1>{currentEntry.summary && <p className="summary">{currentEntry.summary}</p>}</div>}<p className="swipe-hint">💡 左滑合并视图 · 右滑返回 · 长按编辑</p><div className="entry-list">{currentEntries.map(e => { let tx = 0; return (<div key={e.id} className="entry-card" onClick={() => handleEntryClick(e)} onTouchStart={ev => { tx = ev.touches[0].clientX; handleLongPressStart(ev, 'entry', e); }} onTouchMove={handleLongPressEnd} onTouchEnd={ev => { handleLongPressEnd(); handleEntrySwipe(e, ev.changedTouches[0].clientX - tx); }}><div className="entry-icon">{e.isFolder ? '📁' : '📄'}</div><div className="entry-info"><h3>{e.title}{e.linkable && <span className="star-badge">⭐</span>}</h3><p>{e.summary}</p></div><span className="entry-arrow">›</span></div>); })}</div>{currentEntries.length === 0 && <div className="empty-state"><span>✨</span><p>点击右下角添加</p></div>}</>)}{viewMode === 'list' && isReorderMode && <ReorderList entries={currentEntries} onReorder={handleReorder} onExit={() => setIsReorderMode(false)} />}{viewMode === 'single' && currentEntry && (<div className="single-view"><div className="content-header">{isReadOnly ? <h1>{currentEntry.title}</h1> : <input type="text" className="editable-title" defaultValue={currentEntry.title} onBlur={ev => handleTitleChange(currentEntry.id, currentEntry.title, ev.target.value)} key={currentEntry.id + '-title'} />}{isReadOnly ? (currentEntry.summary && <p className="entry-summary">{currentEntry.summary}</p>) : <input type="text" className="editable-summary" defaultValue={currentEntry.summary || ''} placeholder="添加简介..." onBlur={ev => handleSummaryChange(currentEntry.id, ev.target.value)} key={currentEntry.id + '-summary'} />}</div>{isReadOnly ? <ContentRenderer content={currentEntry.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} /> : <RichEditor content={currentEntry.content} onSave={html => saveContent(html)} fontFamily={currentFont} activeFormats={activeFormats} />}</div>)}{viewMode === 'merged' && currentEntry && (<div className="merged-view"><div className="content-header merged-header"><h1>{currentEntry.title}</h1><p className="merged-hint">📖 合并视图</p></div>{isReadOnly ? (<div className="merged-content-read">{liveChildContent.map((it, i, arr) => (<div key={it.id} className="merged-section"><div className="section-title">• {it.title}</div><ContentRenderer content={it.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} />{i < arr.length - 1 && <div className="section-divider" />}</div>))}</div>) : (<div className="merged-content-edit">{mergedContents.map((it, i) => (<div key={it.id} className="merged-edit-section"><div className="merged-edit-header">• <input type="text" className="merged-title-input" defaultValue={it.title} onBlur={ev => handleMergedChange(i, 'title', ev.target.value)} key={it.id + '-title'} /></div><div className="merged-editor-wrap" contentEditable dangerouslySetInnerHTML={{ __html: it.content }} onBlur={ev => handleMergedChange(i, 'content', ev.target.innerHTML)} style={{ fontFamily: currentFont }} /></div>))}<button className="add-merged-entry-btn" onClick={handleAddMerged}>+ 添加词条</button></div>)}</div>)}</main>{viewMode === 'list' && !isReorderMode && (<><button className={`fab ${showAddMenu ? 'active' : ''}`} onClick={() => setShowAddMenu(!showAddMenu)}><span style={{ transform: showAddMenu ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span></button><AddMenu isOpen={showAddMenu} onClose={() => setShowAddMenu(false)} onAddEntry={() => { setEditingEntry(null); setIsCreatingFolder(false); setShowEntryModal(true); }} onAddFolder={() => { setEditingEntry(null); setIsCreatingFolder(true); setShowEntryModal(true); }} onReorder={() => setIsReorderMode(true)} /></>)}{isEditing && <EditorToolbar onIndent={handleIndent} onFormat={() => setShowFormatMenu(true)} onAlign={() => setShowAlignMenu(true)} onFont={() => setShowFontMenu(true)} onImage={handleImageUpload} hasActive={hasActiveFormat} />}<TextFormatMenu isOpen={showFormatMenu} onClose={() => setShowFormatMenu(false)} activeFormats={activeFormats} onToggleFormat={handleToggleFormat} /><AlignMenu isOpen={showAlignMenu} onClose={() => setShowAlignMenu(false)} onAlign={handleAlign} /><FontMenu isOpen={showFontMenu} onClose={() => setShowFontMenu(false)} onSelectFont={setCurrentFont} currentFont={currentFont} /></div><EntryModal isOpen={showEntryModal} onClose={() => { setShowEntryModal(false); setEditingEntry(null); }} onSave={editingEntry ? handleUpdateEntry : handleAddEntry} editingEntry={editingEntry} parentTitle={currentEntry?.title} isFolder={isCreatingFolder} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><style>{styles}</style></div>);
 }
 
 const styles = `
@@ -472,6 +703,9 @@ html,body,#root{height:100%;overflow:hidden}
 .bookshelf-header{text-align:center;margin-bottom:50px}
 .bookshelf-header h1{font-family:'ZCOOL XiaoWei',serif;font-size:2.5rem;color:#f4e4c1;letter-spacing:.3em;text-shadow:0 0 40px rgba(244,228,193,.3);margin-bottom:16px}
 .subtitle{color:rgba(244,228,193,.6);font-size:.95rem;letter-spacing:.15em;line-height:1.8}
+.search-star{background:none;border:none;font-size:1.8rem;cursor:pointer;margin-top:20px;animation:starPulse 2s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(255,215,0,.5))}
+.search-star:active{transform:scale(1.2)}
+@keyframes starPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(255,215,0,.5))}50%{transform:scale(1.1);filter:drop-shadow(0 0 20px rgba(255,215,0,.8))}}
 .bookshelf{display:flex;flex-wrap:wrap;gap:30px;justify-content:center;max-width:1200px;margin:0 auto}
 .book-card{position:relative;width:140px;cursor:pointer;user-select:none}
 .book-card:active{transform:scale(.95)}
@@ -505,7 +739,6 @@ html,body,#root{height:100%;overflow:hidden}
 .top-left{display:flex;gap:4px}
 .icon-btn{background:none;border:none;font-size:1.2rem;padding:8px;border-radius:8px;cursor:pointer;color:#2D3047}
 .icon-btn:active{background:rgba(45,48,71,.1)}
-.jump-back-btn{background:rgba(139,115,85,.1);color:#8B7355}
 .breadcrumb{flex:1;text-align:center;font-size:.85rem;color:#666;overflow:hidden}
 .book-name{color:#2D3047;font-weight:600}
 .separator{margin:0 6px;color:#ccc}
@@ -542,9 +775,11 @@ html,body,#root{height:100%;overflow:hidden}
 .empty-state{text-align:center;padding:60px 20px;color:#999}
 .empty-state span{font-size:2.5rem;display:block;margin-bottom:12px}
 .single-view,.merged-view{background:#fff;border-radius:16px;padding:24px 20px;box-shadow:0 4px 20px rgba(45,48,71,.1);min-height:calc(100vh - 200px)}
-.content-header{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(45,48,71,.1);display:flex;justify-content:space-between;align-items:center}
+.content-header{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(45,48,71,.1);display:flex;flex-direction:column;gap:6px}
 .content-header h1{font-family:'ZCOOL XiaoWei',serif;font-size:1.5rem;color:#2D3047}
-.edit-meta-btn{background:none;border:1px solid #ddd;padding:6px 12px;border-radius:6px;font-size:.8rem;color:#666;cursor:pointer}
+.editable-title{font-family:'ZCOOL XiaoWei',serif;font-size:1.5rem;color:#2D3047;border:none;background:transparent;padding:0;width:100%;outline:none}
+.entry-summary{font-size:.9rem;color:#8B7355}
+.editable-summary{font-size:.9rem;color:#8B7355;border:none;background:transparent;padding:0;width:100%;outline:none}
 .merged-header{text-align:center;display:block}
 .merged-hint{color:#8B7355;font-size:.85rem;margin-top:6px}
 .content-body{line-height:1.9;color:#333;font-size:16px}
@@ -557,7 +792,7 @@ html,body,#root{height:100%;overflow:hidden}
 .rich-editor p{margin-bottom:.5em}
 .rich-editor img{max-width:100%;border-radius:8px;display:block;margin:16px auto}
 .merged-content-read .merged-section{margin-bottom:32px}
-.section-title{font-size:1.1rem;color:#2D3047;font-weight:600;margin-bottom:12px;cursor:pointer}
+.section-title{font-size:1.1rem;color:#2D3047;font-weight:600;margin-bottom:12px}
 .section-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(45,48,71,.15),transparent);margin:32px 0}
 .merged-content-edit{display:flex;flex-direction:column;gap:24px}
 .merged-edit-section{padding-bottom:20px;border-bottom:1px solid rgba(45,48,71,.1)}
@@ -633,4 +868,25 @@ html,body,#root{height:100%;overflow:hidden}
 .context-item.danger{color:#e53935}
 .context-item:not(:last-child){border-bottom:1px solid #eee}
 .context-icon{font-size:1.1rem}
+.search-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:flex;flex-direction:column;backdrop-filter:blur(4px)}
+.search-modal{background:linear-gradient(180deg,#faf8f3 0%,#f5f0e8 100%);flex:1;display:flex;flex-direction:column;max-height:100%;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.search-header{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid rgba(139,115,85,.2);background:#fff}
+.search-input-wrap{flex:1;display:flex;align-items:center;background:rgba(139,115,85,.1);border-radius:12px;padding:0 12px}
+.search-icon{font-size:1rem;color:#8B7355}
+.search-input{flex:1;border:none;background:none;padding:12px 8px;font-size:1rem;font-family:'Noto Serif SC',serif;outline:none;color:#2D3047}
+.search-input::placeholder{color:#aaa}
+.search-clear{background:none;border:none;font-size:1.2rem;color:#999;cursor:pointer;padding:4px 8px}
+.search-cancel{background:none;border:none;color:#8B7355;font-size:1rem;cursor:pointer;font-family:'Noto Serif SC',serif}
+.search-results{flex:1;overflow-y:auto;padding:8px}
+.search-empty{text-align:center;padding:60px 20px;color:#999}
+.search-empty span{font-size:3rem;display:block;margin-bottom:16px}
+.search-result-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);cursor:pointer}
+.search-result-item:active{background:#f9f6f1}
+.result-icon{font-size:1.5rem}
+.result-info{flex:1;min-width:0}
+.result-info h4{font-size:1rem;color:#2D3047;margin-bottom:4px;font-weight:600}
+.result-path{font-size:.8rem;color:#8B7355;margin-bottom:2px}
+.result-summary{font-size:.85rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-arrow{color:#ccc;font-size:1.2rem}
 `;
