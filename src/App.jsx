@@ -143,26 +143,34 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
     return result;
   };
 
-  // 使用 beforeinput 事件处理手机端输入
-  const handleBeforeInput = (e) => {
-    if (e.inputType === 'insertText' && e.data) {
+  // 插入带格式文字的通用函数
+  const insertFormattedText = (text) => {
+    if (hasActiveFormats()) {
+      document.execCommand('insertHTML', false, wrapWithFormats(text));
+    } else {
+      const plainText = `<span style="font-weight:normal;font-style:normal;text-decoration:none;font-size:16px">${text}</span>`;
+      document.execCommand('insertHTML', false, plainText);
+    }
+    save();
+    setTimeout(scrollToCursor, 50);
+  };
+
+  // 电脑端键盘输入
+  const handleKeyDown = (e) => {
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
-      if (hasActiveFormats()) {
-        const formattedText = wrapWithFormats(e.data);
-        document.execCommand('insertHTML', false, formattedText);
-      } else {
-        const plainText = `<span style="font-weight:normal;font-style:normal;text-decoration:none;font-size:16px">${e.data}</span>`;
-        document.execCommand('insertHTML', false, plainText);
-      }
-      save();
+      insertFormattedText(e.key);
+    }
+    if (e.key === 'Enter') {
       setTimeout(scrollToCursor, 50);
     }
   };
 
-  const handleKeyDown = (e) => {
-    // 回车键滚动
-    if (e.key === 'Enter') {
-      setTimeout(scrollToCursor, 50);
+  // 手机端输入法输入
+  const handleBeforeInput = (e) => {
+    if (e.inputType === 'insertText' && e.data) {
+      e.preventDefault();
+      insertFormattedText(e.data);
     }
   };
 
@@ -257,21 +265,11 @@ const EditorToolbar = ({ onIndent, onFormat, onFont, onAlign, onImage, hasActive
 const AddMenu = ({ isOpen, onClose, onAddEntry, onAddFolder, onReorder }) => isOpen ? (<><div className="add-menu-overlay" onClick={onClose} /><div className="add-menu"><div className="add-menu-item" onClick={() => { onReorder(); onClose(); }}><span>↕️</span><span>调整排序</span></div><div className="add-menu-item" onClick={() => { onAddFolder(); onClose(); }}><span>📁</span><span>新建分类</span></div><div className="add-menu-item" onClick={() => { onAddEntry(); onClose(); }}><span>📄</span><span>新建词条</span></div></div></>) : null;
 
 const ReorderList = ({ entries, onReorder, onExit }) => {
-  const [di, setDi] = useState(null); // dragging index
-  const [oi, setOi] = useState(null); // over index  
-  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [di, setDi] = useState(null); // dragging index (原始位置)
+  const [targetIndex, setTargetIndex] = useState(null); // 目标位置
+  const [dragY, setDragY] = useState(0);
   const ref = useRef(null);
-  
-  // 计算拖动后的临时排序
-  const getReorderedEntries = () => {
-    if (di === null || oi === null || di === oi) return entries;
-    const result = [...entries];
-    const [dragged] = result.splice(di, 1);
-    result.splice(oi, 0, dragged);
-    return result;
-  };
-
-  const displayEntries = (di !== null && oi !== null) ? getReorderedEntries() : entries;
+  const itemHeight = 62; // 每个词条的高度（包含间距）
   
   return (
     <div className="reorder-mode">
@@ -281,10 +279,20 @@ const ReorderList = ({ entries, onReorder, onExit }) => {
       </div>
       <p className="reorder-hint">长按拖动调整顺序</p>
       <div className="reorder-list" ref={ref}>
-        {displayEntries.map((e, i) => {
-          // 找到这个 entry 在原数组中的索引
-          const originalIndex = entries.findIndex(x => x.id === e.id);
-          const isDragging = originalIndex === di;
+        {entries.map((e, i) => {
+          // 计算这个词条应该偏移多少
+          let offsetY = 0;
+          if (di !== null && targetIndex !== null && i !== di) {
+            if (di < targetIndex) {
+              // 向下拖：di和targetIndex之间的项目向上移
+              if (i > di && i <= targetIndex) offsetY = -itemHeight;
+            } else if (di > targetIndex) {
+              // 向上拖：targetIndex和di之间的项目向下移
+              if (i >= targetIndex && i < di) offsetY = itemHeight;
+            }
+          }
+          
+          const isDragging = i === di;
           
           return (
             <div 
@@ -292,50 +300,45 @@ const ReorderList = ({ entries, onReorder, onExit }) => {
               className={`reorder-item ${isDragging ? 'dragging' : ''}`}
               onTouchStart={(ev) => { 
                 const t = ev.touches[0];
-                setDragPos({ x: t.clientX, y: t.clientY });
-                setDi(originalIndex);
-                setOi(originalIndex);
+                setDragY(t.clientY);
+                setDi(i);
+                setTargetIndex(i);
                 if (navigator.vibrate) navigator.vibrate(30); 
               }}
               onTouchMove={(ev) => {
                 if (di === null) return;
                 ev.preventDefault();
                 const t = ev.touches[0];
-                setDragPos({ x: t.clientX, y: t.clientY });
+                setDragY(t.clientY);
                 
-                // 计算当前手指位置应该对应的索引
-                const items = ref.current?.querySelectorAll('.reorder-item:not(.dragging)');
-                if (items && items.length > 0) {
-                  let newOi = 0;
-                  for (let j = 0; j < items.length; j++) {
-                    const r = items[j].getBoundingClientRect();
-                    const midY = r.top + r.height / 2;
-                    if (t.clientY > midY) {
-                      newOi = j + 1;
-                    }
-                  }
-                  // 调整索引，考虑被拖动项的原位置
-                  if (newOi > di) newOi = Math.min(newOi, entries.length - 1);
-                  setOi(newOi);
+                // 根据手指位置计算目标索引
+                const listRect = ref.current?.getBoundingClientRect();
+                if (listRect) {
+                  const relativeY = t.clientY - listRect.top;
+                  let newTarget = Math.floor(relativeY / itemHeight);
+                  newTarget = Math.max(0, Math.min(entries.length - 1, newTarget));
+                  setTargetIndex(newTarget);
                 }
               }}
               onTouchEnd={() => { 
-                if (di !== null && oi !== null && di !== oi) {
-                  onReorder(di, oi); 
+                if (di !== null && targetIndex !== null && di !== targetIndex) {
+                  onReorder(di, targetIndex); 
                 }
                 setDi(null); 
-                setOi(null); 
+                setTargetIndex(null); 
               }}
               style={isDragging ? {
                 position: 'fixed',
                 left: '5%',
                 width: '90%',
-                top: dragPos.y - 30,
+                top: dragY - 30,
                 zIndex: 1000,
                 transform: 'scale(0.95)',
-                boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
-                pointerEvents: 'none'
+                boxShadow: '0 8px 25px rgba(0,0,0,0.25)',
+                pointerEvents: 'none',
+                transition: 'none'
               } : {
+                transform: `translateY(${offsetY}px)`,
                 transition: 'transform 0.2s ease'
               }}
             >
@@ -441,12 +444,11 @@ export default function App() {
   const handleIndent = () => { 
     const ed = document.querySelector('.rich-editor'); 
     if (!ed) return; 
-    // 切换缩进样式
-    if (ed.style.textIndent === '2em') {
-      ed.style.textIndent = '0';
-    } else {
-      ed.style.textIndent = '2em';
-    }
+    ed.querySelectorAll('p').forEach(p => { 
+      if (p.textContent && !p.textContent.startsWith('　　')) {
+        p.textContent = '　　' + p.textContent; 
+      }
+    }); 
     ed.forceSave?.(); 
   };
   const handleImageUpload = async (e) => { const f = e.target.files[0]; if (f) { const c = await compressImage(f, 600); const ed = document.querySelector('.rich-editor'); if (ed) { ed.focus(); document.execCommand('insertHTML', false, `<p style="text-align:center"><img src="${c}" style="max-width:100%;border-radius:8px" /></p>`); ed.forceSave?.(); } } e.target.value = ''; };
@@ -552,7 +554,7 @@ html,body,#root{height:100%;overflow:hidden}
 .keyword.linked{color:#8B7355;background:linear-gradient(180deg,transparent 60%,rgba(139,115,85,.2) 60%);cursor:pointer}
 .rich-editor{min-height:50vh;line-height:1.9;font-size:16px;outline:none;color:#333;padding-bottom:40vh}
 .rich-editor:empty:before{content:'开始书写...';color:#999}
-.rich-editor p{margin-bottom:.5em;text-indent:inherit}
+.rich-editor p{margin-bottom:.5em}
 .rich-editor img{max-width:100%;border-radius:8px;display:block;margin:16px auto}
 .merged-content-read .merged-section{margin-bottom:32px}
 .section-title{font-size:1.1rem;color:#2D3047;font-weight:600;margin-bottom:12px;cursor:pointer}
