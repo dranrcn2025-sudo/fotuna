@@ -143,23 +143,24 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
     return result;
   };
 
-  const handleKeyDown = (e) => {
-    // 只处理普通字符输入（不处理控制键、快捷键等）
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  // 使用 beforeinput 事件处理手机端输入
+  const handleBeforeInput = (e) => {
+    if (e.inputType === 'insertText' && e.data) {
       e.preventDefault();
       if (hasActiveFormats()) {
-        const formattedText = wrapWithFormats(e.key);
+        const formattedText = wrapWithFormats(e.data);
         document.execCommand('insertHTML', false, formattedText);
       } else {
-        // 没有格式时，用 span 包裹并重置所有样式，避免继承之前的格式
-        const plainText = `<span style="font-weight:normal;font-style:normal;text-decoration:none;font-size:16px">${e.key}</span>`;
+        const plainText = `<span style="font-weight:normal;font-style:normal;text-decoration:none;font-size:16px">${e.data}</span>`;
         document.execCommand('insertHTML', false, plainText);
       }
       save();
-      // 输入后滚动让光标可见
       setTimeout(scrollToCursor, 50);
     }
-    // 回车键也要滚动
+  };
+
+  const handleKeyDown = (e) => {
+    // 回车键滚动
     if (e.key === 'Enter') {
       setTimeout(scrollToCursor, 50);
     }
@@ -186,6 +187,7 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
         save();
         setTimeout(scrollToCursor, 50);
       }}
+      onBeforeInput={handleBeforeInput}
       onKeyDown={handleKeyDown}
       onFocus={scrollToCursor}
       onPaste={(e) => { 
@@ -255,12 +257,21 @@ const EditorToolbar = ({ onIndent, onFormat, onFont, onAlign, onImage, hasActive
 const AddMenu = ({ isOpen, onClose, onAddEntry, onAddFolder, onReorder }) => isOpen ? (<><div className="add-menu-overlay" onClick={onClose} /><div className="add-menu"><div className="add-menu-item" onClick={() => { onReorder(); onClose(); }}><span>↕️</span><span>调整排序</span></div><div className="add-menu-item" onClick={() => { onAddFolder(); onClose(); }}><span>📁</span><span>新建分类</span></div><div className="add-menu-item" onClick={() => { onAddEntry(); onClose(); }}><span>📄</span><span>新建词条</span></div></div></>) : null;
 
 const ReorderList = ({ entries, onReorder, onExit }) => {
-  const [di, setDi] = useState(null);
-  const [oi, setOi] = useState(null);
+  const [di, setDi] = useState(null); // dragging index
+  const [oi, setOi] = useState(null); // over index  
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
-  const dragItemRef = useRef(null);
+  
+  // 计算拖动后的临时排序
+  const getReorderedEntries = () => {
+    if (di === null || oi === null || di === oi) return entries;
+    const result = [...entries];
+    const [dragged] = result.splice(di, 1);
+    result.splice(oi, 0, dragged);
+    return result;
+  };
+
+  const displayEntries = (di !== null && oi !== null) ? getReorderedEntries() : entries;
   
   return (
     <div className="reorder-mode">
@@ -270,62 +281,74 @@ const ReorderList = ({ entries, onReorder, onExit }) => {
       </div>
       <p className="reorder-hint">长按拖动调整顺序</p>
       <div className="reorder-list" ref={ref}>
-        {entries.map((e, i) => (
-          <div 
-            key={e.id} 
-            className={`reorder-item ${di === i ? 'dragging' : ''} ${oi === i && di !== i ? 'over' : ''}`}
-            onTouchStart={(ev) => { 
-              const t = ev.touches[0];
-              setStartPos({ x: t.clientX, y: t.clientY });
-              setDragPos({ x: t.clientX, y: t.clientY });
-              setDi(i); 
-              if (navigator.vibrate) navigator.vibrate(30); 
-            }}
-            onTouchMove={(ev) => {
-              if (di === null) return;
-              ev.preventDefault();
-              const t = ev.touches[0];
-              setDragPos({ x: t.clientX, y: t.clientY });
-              const items = ref.current?.querySelectorAll('.reorder-item');
-              if (items) {
-                for (let j = 0; j < items.length; j++) {
-                  const r = items[j].getBoundingClientRect();
-                  if (t.clientY >= r.top && t.clientY <= r.bottom) {
-                    setOi(j);
-                    break;
+        {displayEntries.map((e, i) => {
+          // 找到这个 entry 在原数组中的索引
+          const originalIndex = entries.findIndex(x => x.id === e.id);
+          const isDragging = originalIndex === di;
+          
+          return (
+            <div 
+              key={e.id} 
+              className={`reorder-item ${isDragging ? 'dragging' : ''}`}
+              onTouchStart={(ev) => { 
+                const t = ev.touches[0];
+                setDragPos({ x: t.clientX, y: t.clientY });
+                setDi(originalIndex);
+                setOi(originalIndex);
+                if (navigator.vibrate) navigator.vibrate(30); 
+              }}
+              onTouchMove={(ev) => {
+                if (di === null) return;
+                ev.preventDefault();
+                const t = ev.touches[0];
+                setDragPos({ x: t.clientX, y: t.clientY });
+                
+                // 计算当前手指位置应该对应的索引
+                const items = ref.current?.querySelectorAll('.reorder-item:not(.dragging)');
+                if (items && items.length > 0) {
+                  let newOi = 0;
+                  for (let j = 0; j < items.length; j++) {
+                    const r = items[j].getBoundingClientRect();
+                    const midY = r.top + r.height / 2;
+                    if (t.clientY > midY) {
+                      newOi = j + 1;
+                    }
                   }
+                  // 调整索引，考虑被拖动项的原位置
+                  if (newOi > di) newOi = Math.min(newOi, entries.length - 1);
+                  setOi(newOi);
                 }
-              }
-            }}
-            onTouchEnd={() => { 
-              if (di !== null && oi !== null && di !== oi) onReorder(di, oi); 
-              setDi(null); 
-              setOi(null); 
-            }}
-            style={di === i ? {
-              position: 'fixed',
-              left: dragPos.x - 150,
-              top: dragPos.y - 30,
-              width: '300px',
-              zIndex: 1000,
-              transform: 'scale(0.9)',
-              opacity: 0.9,
-              pointerEvents: 'none'
-            } : {}}
-          >
-            <div className="reorder-content">
-              <span>{e.isFolder ? '📁' : '📄'}</span>
-              <span>{e.title}</span>
+              }}
+              onTouchEnd={() => { 
+                if (di !== null && oi !== null && di !== oi) {
+                  onReorder(di, oi); 
+                }
+                setDi(null); 
+                setOi(null); 
+              }}
+              style={isDragging ? {
+                position: 'fixed',
+                left: '5%',
+                width: '90%',
+                top: dragPos.y - 30,
+                zIndex: 1000,
+                transform: 'scale(0.95)',
+                boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
+                pointerEvents: 'none'
+              } : {
+                transition: 'transform 0.2s ease'
+              }}
+            >
+              <div className="reorder-content">
+                <span>{e.isFolder ? '📁' : '📄'}</span>
+                <span>{e.title}</span>
+              </div>
+              <div className="bookmark-tab">
+                <span>≡</span>
+              </div>
             </div>
-            <div className="bookmark-tab">
-              <span>≡</span>
-            </div>
-          </div>
-        ))}
-        {/* 占位符，当有项目被拖动时显示 */}
-        {di !== null && (
-          <div className="reorder-placeholder" style={{ order: di }}></div>
-        )}
+          );
+        })}
       </div>
     </div>
   );
@@ -415,7 +438,17 @@ export default function App() {
     setActiveFormats(p => ['small', 'medium', 'big', 'huge'].includes(t) ? { ...p, size: t } : { ...p, [t]: !p[t] });
   };
   const handleAlign = (c) => { const ed = document.querySelector('.rich-editor'); if (ed) { ed.focus(); document.execCommand(c, false, null); ed.forceSave?.(); } };
-  const handleIndent = () => { const ed = document.querySelector('.rich-editor'); if (!ed) return; ed.querySelectorAll('p').forEach(p => { if (p.textContent && !p.textContent.startsWith('　　')) p.textContent = '　　' + p.textContent; }); ed.forceSave?.(); };
+  const handleIndent = () => { 
+    const ed = document.querySelector('.rich-editor'); 
+    if (!ed) return; 
+    // 切换缩进样式
+    if (ed.style.textIndent === '2em') {
+      ed.style.textIndent = '0';
+    } else {
+      ed.style.textIndent = '2em';
+    }
+    ed.forceSave?.(); 
+  };
   const handleImageUpload = async (e) => { const f = e.target.files[0]; if (f) { const c = await compressImage(f, 600); const ed = document.querySelector('.rich-editor'); if (ed) { ed.focus(); document.execCommand('insertHTML', false, `<p style="text-align:center"><img src="${c}" style="max-width:100%;border-radius:8px" /></p>`); ed.forceSave?.(); } } e.target.value = ''; };
   const handleEntrySwipe = (e, dx) => { if (dx < -80 && (e.isFolder || e.children?.length > 0)) { setSlideAnim('slide-in'); setNavigationStack(p => [...p, currentEntry].filter(Boolean)); setCurrentEntry(e); setViewMode('merged'); setTimeout(() => initMerged(e), 50); setTimeout(() => setSlideAnim(''), 250); } };
 
@@ -519,7 +552,7 @@ html,body,#root{height:100%;overflow:hidden}
 .keyword.linked{color:#8B7355;background:linear-gradient(180deg,transparent 60%,rgba(139,115,85,.2) 60%);cursor:pointer}
 .rich-editor{min-height:50vh;line-height:1.9;font-size:16px;outline:none;color:#333;padding-bottom:40vh}
 .rich-editor:empty:before{content:'开始书写...';color:#999}
-.rich-editor p{margin-bottom:.5em}
+.rich-editor p{margin-bottom:.5em;text-indent:inherit}
 .rich-editor img{max-width:100%;border-radius:8px;display:block;margin:16px auto}
 .merged-content-read .merged-section{margin-bottom:32px}
 .section-title{font-size:1.1rem;color:#2D3047;font-weight:600;margin-bottom:12px;cursor:pointer}
@@ -561,12 +594,10 @@ html,body,#root{height:100%;overflow:hidden}
 .reorder-header h3{font-family:'ZCOOL XiaoWei',serif;font-size:1.3rem;color:#2D3047}
 .done-btn{background:#8B7355;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:.9rem;cursor:pointer}
 .reorder-hint{font-size:.8rem;color:#999;text-align:center;margin-bottom:16px}
-.reorder-list{display:flex;flex-direction:column;gap:8px;position:relative}
-.reorder-item{display:flex;align-items:center;background:#fff;border-radius:12px;overflow:visible;box-shadow:0 2px 8px rgba(45,48,71,.08);transition:transform 0.15s ease,box-shadow 0.15s ease}
-.reorder-item.dragging{box-shadow:0 8px 25px rgba(45,48,71,.25);z-index:1000}
-.reorder-item.over{background:rgba(139,115,85,.1);border:2px dashed #8B7355}
+.reorder-list{display:flex;flex-direction:column;gap:8px;position:relative;min-height:200px}
+.reorder-item{display:flex;align-items:center;background:#fff;border-radius:12px;overflow:visible;box-shadow:0 2px 8px rgba(45,48,71,.08)}
+.reorder-item.dragging{background:#fff;border-radius:12px}
 .reorder-content{flex:1;display:flex;align-items:center;gap:12px;padding:14px 16px}
-.reorder-placeholder{height:60px;background:rgba(139,115,85,.1);border:2px dashed #8B7355;border-radius:12px;margin:4px 0}
 .bookmark-tab{width:40px;height:100%;background:linear-gradient(135deg,#8B7355,#6B5335);display:flex;align-items:center;justify-content:center;color:#f4e4c1;font-size:1.2rem;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,8px 50%)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-content{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px;max-height:80vh;overflow-y:auto}
