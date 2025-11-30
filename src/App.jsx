@@ -106,6 +106,25 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
     } 
   };
 
+  // 让光标位置滚动到屏幕中央
+  const scrollToCursor = () => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const targetY = viewportHeight * 0.4; // 屏幕 40% 位置
+      
+      if (rect.top > viewportHeight * 0.6 || rect.top < viewportHeight * 0.2) {
+        const scrollContainer = ref.current?.closest('.content-area');
+        if (scrollContainer) {
+          const scrollBy = rect.top - targetY;
+          scrollContainer.scrollBy({ top: scrollBy, behavior: 'smooth' });
+        }
+      }
+    }
+  };
+
   // 检查是否有任何格式被激活
   const hasActiveFormats = () => {
     return activeFormats.bold || activeFormats.italic || activeFormats.underline || activeFormats.strike || activeFormats.size !== 'medium';
@@ -137,6 +156,12 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
         document.execCommand('insertHTML', false, plainText);
       }
       save();
+      // 输入后滚动让光标可见
+      setTimeout(scrollToCursor, 50);
+    }
+    // 回车键也要滚动
+    if (e.key === 'Enter') {
+      setTimeout(scrollToCursor, 50);
     }
   };
 
@@ -157,8 +182,12 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
       ref={ref} 
       className="rich-editor" 
       contentEditable 
-      onInput={save}
+      onInput={(e) => {
+        save();
+        setTimeout(scrollToCursor, 50);
+      }}
       onKeyDown={handleKeyDown}
+      onFocus={scrollToCursor}
       onPaste={(e) => { 
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
@@ -167,7 +196,8 @@ const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
         } else {
           document.execCommand('insertText', false, text);
         }
-        save(); 
+        save();
+        setTimeout(scrollToCursor, 50);
       }} 
       onBlur={forceSave} 
       style={{ fontFamily }} 
@@ -227,8 +257,78 @@ const AddMenu = ({ isOpen, onClose, onAddEntry, onAddFolder, onReorder }) => isO
 const ReorderList = ({ entries, onReorder, onExit }) => {
   const [di, setDi] = useState(null);
   const [oi, setOi] = useState(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
-  return (<div className="reorder-mode"><div className="reorder-header"><h3>调整排序</h3><button className="done-btn" onClick={onExit}>完成</button></div><p className="reorder-hint">长按拖动调整顺序</p><div className="reorder-list" ref={ref} onTouchMove={(e) => { if (di === null) return; e.preventDefault(); const t = e.touches[0]; const items = ref.current?.querySelectorAll('.reorder-item'); if (items) for (let i = 0; i < items.length; i++) { const r = items[i].getBoundingClientRect(); if (t.clientY >= r.top && t.clientY <= r.bottom) { setOi(i); break; } } }} onTouchEnd={() => { if (di !== null && oi !== null && di !== oi) onReorder(di, oi); setDi(null); setOi(null); }}>{entries.map((e, i) => (<div key={e.id} className={`reorder-item ${di === i ? 'dragging' : ''} ${oi === i && di !== i ? 'over' : ''}`} onTouchStart={() => { setDi(i); if (navigator.vibrate) navigator.vibrate(30); }}><div className="reorder-content"><span>{e.isFolder ? '📁' : '📄'}</span><span>{e.title}</span></div><div className="bookmark-tab">≡</div></div>))}</div></div>);
+  const dragItemRef = useRef(null);
+  
+  return (
+    <div className="reorder-mode">
+      <div className="reorder-header">
+        <h3>调整排序</h3>
+        <button className="done-btn" onClick={onExit}>完成</button>
+      </div>
+      <p className="reorder-hint">长按拖动调整顺序</p>
+      <div className="reorder-list" ref={ref}>
+        {entries.map((e, i) => (
+          <div 
+            key={e.id} 
+            className={`reorder-item ${di === i ? 'dragging' : ''} ${oi === i && di !== i ? 'over' : ''}`}
+            onTouchStart={(ev) => { 
+              const t = ev.touches[0];
+              setStartPos({ x: t.clientX, y: t.clientY });
+              setDragPos({ x: t.clientX, y: t.clientY });
+              setDi(i); 
+              if (navigator.vibrate) navigator.vibrate(30); 
+            }}
+            onTouchMove={(ev) => {
+              if (di === null) return;
+              ev.preventDefault();
+              const t = ev.touches[0];
+              setDragPos({ x: t.clientX, y: t.clientY });
+              const items = ref.current?.querySelectorAll('.reorder-item');
+              if (items) {
+                for (let j = 0; j < items.length; j++) {
+                  const r = items[j].getBoundingClientRect();
+                  if (t.clientY >= r.top && t.clientY <= r.bottom) {
+                    setOi(j);
+                    break;
+                  }
+                }
+              }
+            }}
+            onTouchEnd={() => { 
+              if (di !== null && oi !== null && di !== oi) onReorder(di, oi); 
+              setDi(null); 
+              setOi(null); 
+            }}
+            style={di === i ? {
+              position: 'fixed',
+              left: dragPos.x - 150,
+              top: dragPos.y - 30,
+              width: '300px',
+              zIndex: 1000,
+              transform: 'scale(0.9)',
+              opacity: 0.9,
+              pointerEvents: 'none'
+            } : {}}
+          >
+            <div className="reorder-content">
+              <span>{e.isFolder ? '📁' : '📄'}</span>
+              <span>{e.title}</span>
+            </div>
+            <div className="bookmark-tab">
+              <span>≡</span>
+            </div>
+          </div>
+        ))}
+        {/* 占位符，当有项目被拖动时显示 */}
+        {di !== null && (
+          <div className="reorder-placeholder" style={{ order: di }}></div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default function App() {
@@ -386,7 +486,7 @@ html,body,#root{height:100%;overflow:hidden}
 .info-cover{width:70px;height:95px;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#2D3047,#1a1a2e);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
 .info-cover img{width:100%;height:100%;object-fit:cover}
 .info-details{flex:1;font-size:.85rem;color:#666;display:flex;flex-direction:column;gap:6px}
-.content-area{padding:20px 16px 80px;flex:1;overflow-y:auto}
+.content-area{padding:20px 16px 80px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 .content-area.slide-in{animation:slideIn .25s ease-out}
 .content-area.slide-out{animation:slideOut .2s ease-in}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -417,7 +517,7 @@ html,body,#root{height:100%;overflow:hidden}
 .content-body img{max-width:100%;border-radius:8px;display:block;margin:16px auto}
 .keyword{color:#2D3047;font-weight:600}
 .keyword.linked{color:#8B7355;background:linear-gradient(180deg,transparent 60%,rgba(139,115,85,.2) 60%);cursor:pointer}
-.rich-editor{min-height:50vh;line-height:1.9;font-size:16px;outline:none;color:#333}
+.rich-editor{min-height:50vh;line-height:1.9;font-size:16px;outline:none;color:#333;padding-bottom:40vh}
 .rich-editor:empty:before{content:'开始书写...';color:#999}
 .rich-editor p{margin-bottom:.5em}
 .rich-editor img{max-width:100%;border-radius:8px;display:block;margin:16px auto}
@@ -461,12 +561,13 @@ html,body,#root{height:100%;overflow:hidden}
 .reorder-header h3{font-family:'ZCOOL XiaoWei',serif;font-size:1.3rem;color:#2D3047}
 .done-btn{background:#8B7355;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:.9rem;cursor:pointer}
 .reorder-hint{font-size:.8rem;color:#999;text-align:center;margin-bottom:16px}
-.reorder-list{display:flex;flex-direction:column;gap:8px}
-.reorder-item{display:flex;align-items:center;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(45,48,71,.08)}
-.reorder-item.dragging{opacity:.6;transform:scale(.95)}
-.reorder-item.over{border:2px dashed #8B7355}
+.reorder-list{display:flex;flex-direction:column;gap:8px;position:relative}
+.reorder-item{display:flex;align-items:center;background:#fff;border-radius:12px;overflow:visible;box-shadow:0 2px 8px rgba(45,48,71,.08);transition:transform 0.15s ease,box-shadow 0.15s ease}
+.reorder-item.dragging{box-shadow:0 8px 25px rgba(45,48,71,.25);z-index:1000}
+.reorder-item.over{background:rgba(139,115,85,.1);border:2px dashed #8B7355}
 .reorder-content{flex:1;display:flex;align-items:center;gap:12px;padding:14px 16px}
-.bookmark-tab{width:40px;background:linear-gradient(135deg,#8B7355,#6B5335);display:flex;align-items:center;justify-content:center;color:#f4e4c1;font-size:1.2rem;padding:14px 0}
+.reorder-placeholder{height:60px;background:rgba(139,115,85,.1);border:2px dashed #8B7355;border-radius:12px;margin:4px 0}
+.bookmark-tab{width:40px;height:100%;background:linear-gradient(135deg,#8B7355,#6B5335);display:flex;align-items:center;justify-content:center;color:#f4e4c1;font-size:1.2rem;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,8px 50%)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-content{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px;max-height:80vh;overflow-y:auto}
 .modal-content h3{font-family:'ZCOOL XiaoWei',serif;font-size:1.3rem;color:#2D3047;margin-bottom:16px;text-align:center}
