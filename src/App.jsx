@@ -7,44 +7,37 @@ const loadFromStorage = () => { try { const saved = localStorage.getItem(STORAGE
 const initialData = {
   books: [
     {
-      id: 'fortuna', title: 'Fortuna', author: '桐青璃落', tags: ['奇幻', '西方'],
-      cover: '🌙', coverImage: null, color: '#2D3047', showStats: true,
+      id: 'guide', title: '先从这个小故事开始', author: '一页穹顶', tags: ['教程'],
+      cover: '✨', coverImage: null, color: '#4A3D6A', showStats: true,
+      gallery: { enabled: false, images: [] },
       entries: [
         {
-          id: 'worldview', title: '世界观', summary: '关于这个世界', content: '', isFolder: true, linkable: false,
+          id: 'welcome', title: '欢迎来到一页穹顶', summary: '你的创作伙伴', linkable: true, isFolder: false,
+          content: '<p>　　欢迎！🎉</p><p>　　<b>一页穹顶</b>是一款专为创作者设计的灵感管理工具。无论你是小说作者、剧本创作者还是世界观构建爱好者，这里都能帮你把散落的灵感碎片编织成完整的星空。</p><p>　　在这本引导书里，你将学会如何使用一页穹顶的全部功能。点击下方的【基础操作】开始探索吧！</p>',
+          children: []
+        },
+        {
+          id: 'basics', title: '基础操作', summary: '从这里开始', content: '', isFolder: true, linkable: true,
           children: [
-            {
-              id: 'religion', title: '宗教', summary: '神祇与信仰', content: '', isFolder: true, linkable: false,
-              children: [
-                { id: 'ten-days', title: '十日旧约', summary: '创世传说', linkable: true, isFolder: false, content: '<p>　　在时间的起点，女神独自漂浮于无尽的寂静之中。</p><p>　　第一日，她从心火中分离出【火的守望】。</p><p>　　第二日，从泪水中分离出【水的祝福】。</p>', children: [] },
-                { id: 'war-gods', title: '战争双神', summary: '胜利与牺牲', linkable: true, isFolder: false, content: '<p>　　<b>胜利者·凯洛斯</b>，身披金色战甲。</p><p>　　<i>牺牲者·赛莲娜</i>，身着银色长袍。</p>', children: [] }
-              ]
-            },
-            {
-              id: 'geography', title: '地理', summary: '大陆疆域', content: '', isFolder: true, linkable: false,
-              children: [
-                { id: 'koltra', title: '柯尔特拉', summary: '中央王国', linkable: true, isFolder: true, content: '<p>　　位于大陆正中央，被称为"女神的掌心"。</p>', 
-                  children: [
-                    { id: 'silver-city', title: '银冠城', summary: '首都', linkable: true, isFolder: false, content: '<p>　　首都建立在白色岩石上，城中有【千年图书馆】。</p>', children: [] }
-                  ] },
-                { id: 'northland', title: '北境', summary: '冰雪王国', linkable: true, isFolder: false, content: '<p>　　永恒冬季笼罩的土地，居民是【霜裔】后代。</p>', children: [] }
-              ]
-            }
+            { id: 'create-entry', title: '创建词条', summary: '记录你的灵感', linkable: true, isFolder: false, content: '<p>　　<b>创建词条很简单：</b></p><p>　　1. 进入任意书籍或分类</p><p>　　2. 点击右下角的 <b>+</b> 按钮</p><p>　　3. 选择「新建词条」或「新建分类」</p><p>　　4. 输入标题和简介</p><p>　　<b>小提示：</b>分类可以包含子词条，适合整理复杂的世界观。</p>', children: [] },
+            { id: 'edit-content', title: '编辑内容', summary: '让文字更精彩', linkable: true, isFolder: false, content: '<p>　　<b>进入编辑模式：</b></p><p>　　点击右上角的「编辑」按钮，即可开始书写。</p><p>　　<b>底部工具栏功能：</b></p><p>　　• <b>↵</b> 首行缩进（给每段加两个空格）</p><p>　　• <b>A</b> 文字格式（加粗、斜体、下划线、删除线、字号）</p><p>　　• <b>对齐</b> 左对齐/居中/右对齐</p><p>　　• <b>T</b> 切换字体</p><p>　　• <b>🖼</b> 插入图片</p>', children: [] },
+            { id: 'link-system', title: '跳转链接', summary: '连接你的世界', linkable: true, isFolder: false, content: '<p>　　这是一页穹顶最强大的功能！</p><p>　　<b>使用方法：</b></p><p>　　在正文中用【】包裹词条名，如【创建词条】，就会自动变成可点击的链接。</p><p>　　点击链接会跳转到对应词条，用左上角的返回按钮可以回来。</p><p>　　<b>开启跳转：</b></p><p>　　长按词条 → 选择「开启跳转」，该词条就可以被链接了。</p>', children: [] }
           ]
         },
         {
-          id: 'characters', title: '人物', summary: '故事灵魂', content: '', isFolder: true, linkable: false,
+          id: 'advanced', title: '进阶功能', summary: '更多强大工具', content: '', isFolder: true, linkable: true,
           children: [
-            { id: 'elena', title: '艾琳娜', summary: '流亡公主', linkable: true, isFolder: false, content: '<p>　　【柯尔特拉】末代国王的独生女。在【千年图书馆】长大，对【十日旧约】研究深入。</p>', children: [] }
+            { id: 'merged-view', title: '合并视图', summary: '一览无余', linkable: true, isFolder: false, content: '<p>　　<b>什么是合并视图？</b></p><p>　　当你有一个分类包含多个词条时，可以用合并视图一次性阅读所有内容。</p><p>　　<b>使用方法：</b></p><p>　　在分类列表中，<b>向左滑动</b>任意分类或词条，即可进入该项的合并视图。</p><p>　　合并视图中可以直接编辑所有子词条的内容，甚至添加新词条！</p>', children: [] },
+            { id: 'search-func', title: '全局搜索', summary: '星星指引方向', linkable: true, isFolder: false, content: '<p>　　<b>书架页面的金色星星 ⭐</b></p><p>　　点击它会打开搜索界面，可以搜索所有书籍中的词条。</p><p>　　支持搜索：标题、简介、正文内容。</p><p>　　点击搜索结果会直接跳转到对应位置。</p>', children: [] },
+            { id: 'reorder', title: '调整排序', summary: '自由安排顺序', linkable: true, isFolder: false, content: '<p>　　<b>如何调整词条顺序？</b></p><p>　　1. 点击右下角 <b>+</b> 按钮</p><p>　　2. 选择「调整排序」</p><p>　　3. 长按词条并拖动到目标位置</p><p>　　4. 点击「完成」保存</p>', children: [] },
+            { id: 'export-image', title: '导出长图', summary: '分享你的创作', linkable: true, isFolder: false, content: '<p>　　<b>在只读模式下</b>，长按正文内容可以唤出功能菜单。</p><p>　　选择「导出长图」，会将当前词条生成为一张精美的长图，方便分享到社交媒体。</p><p>　　导出的图片不包含顶部导航栏，只有纯净的内容。</p>', children: [] }
           ]
+        },
+        {
+          id: 'tips', title: '小贴士', summary: '让使用更顺手', linkable: true, isFolder: false,
+          content: '<p>　　<b>一些实用技巧：</b></p><p>　　• 长按书籍或词条可以编辑/删除</p><p>　　• 切换编辑/阅读模式时会自动保存</p><p>　　• 词条底部会显示实时字数统计</p><p>　　• 在书籍设置中可以选择是否显示字数</p><p>　　<b>现在，创建你的第一本书吧！</b></p><p>　　返回书架，点击「新建世界」开始你的创作之旅~ 🚀</p>',
+          children: []
         }
-      ]
-    },
-    {
-      id: 'jade-book', title: '玉辞', author: '桐青璃落', tags: ['古风'],
-      cover: '🏯', coverImage: null, color: '#4A0E0E', showStats: true,
-      entries: [
-        { id: 'jade-chars', title: '人物', summary: '江湖儿女', content: '<p>　　曾有异世旅人【艾琳娜】短暂停留……</p>', isFolder: true, linkable: false, children: [] }
       ]
     }
   ]
@@ -60,6 +53,7 @@ const addEntryToParent = (es, pid, ne) => { if (!pid) return [...es, ne]; return
 const deleteEntryFromTree = (es, eid) => es.filter(e => e.id !== eid).map(e => e.children?.length ? { ...e, children: deleteEntryFromTree(e.children, eid) } : e);
 const reorderEntriesInParent = (es, pid, fi, ti) => { if (pid === null) { const a = [...es]; const [m] = a.splice(fi, 1); a.splice(ti, 0, m); return a; } return es.map(e => e.id === pid && e.children ? (() => { const a = [...e.children]; const [m] = a.splice(fi, 1); a.splice(ti, 0, m); return { ...e, children: a }; })() : e.children?.length ? { ...e, children: reorderEntriesInParent(e.children, pid, fi, ti) } : e); };
 const countWords = (es) => { let c = 0; const t = (is) => is.forEach(i => { if (i.content) c += i.content.replace(/<[^>]+>/g, '').replace(/\s/g, '').length; if (i.children?.length) t(i.children); }); t(es); return c; };
+const countSingleEntryWords = (content) => content ? content.replace(/<[^>]+>/g, '').replace(/\s/g, '').length : 0;
 const countEntries = (es) => { let c = 0; const t = (is) => is.forEach(i => { if (!i.isFolder) c++; if (i.children?.length) t(i.children); }); t(es); return c; };
 const compressImage = (file, maxW = 600) => new Promise(r => { const rd = new FileReader(); rd.onload = (e) => { const img = new Image(); img.onload = () => { const cv = document.createElement('canvas'); let { width: w, height: h } = img; if (w > maxW) { h = (h * maxW) / w; w = maxW; } cv.width = w; cv.height = h; cv.getContext('2d').drawImage(img, 0, 0, w, h); r(cv.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; rd.readAsDataURL(file); });
 
@@ -81,14 +75,41 @@ const ContentRenderer = ({ content, allTitlesMap, currentBookId, onLinkClick, fo
   return <div ref={ref} className="content-body" style={{ fontFamily }} />;
 };
 
-const RichEditor = ({ content, onSave, fontFamily, activeFormats }) => {
+const RichEditor = ({ content, onSave, fontFamily, activeFormats, onImageClick }) => {
   const ref = useRef(null);
   const timer = useRef(null);
+  const onImageClickRef = useRef(onImageClick);
+  
+  // 保持 onImageClick 的最新引用
+  useEffect(() => {
+    onImageClickRef.current = onImageClick;
+  }, [onImageClick]);
 
+  // 初始化内容，只执行一次
   useEffect(() => {
     if (ref.current) {
       ref.current.innerHTML = content || '<p><br></p>';
     }
+  }, []);
+  
+  // 图片点击事件，只绑定一次
+  useEffect(() => {
+    if (!ref.current) return;
+    
+    const handleImgClick = (e) => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onImageClickRef.current) {
+          onImageClickRef.current(e.target);
+        }
+      }
+    };
+    
+    ref.current.addEventListener('click', handleImgClick);
+    return () => {
+      ref.current?.removeEventListener('click', handleImgClick);
+    };
   }, []);
 
   const save = useCallback(() => {
@@ -262,7 +283,7 @@ const EditorToolbar = ({ onIndent, onFormat, onFont, onAlign, onImage, hasActive
   return (<div className="editor-toolbar-bottom"><button onClick={onIndent}>↵</button><button onClick={onFormat} className={hasActive ? 'has-active' : ''}>A</button><button onClick={onAlign}><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3V3zm3 4h12v2H6V7zm-3 4h18v2H3v-2zm3 4h12v2H6v-2zm-3 4h18v2H3v-2z"/></svg></button><button onClick={onFont}>T</button><button onClick={() => imgRef.current?.click()}>🖼</button><input ref={imgRef} type="file" accept="image/*" onChange={onImage} style={{ display: 'none' }} /></div>);
 };
 
-const AddMenu = ({ isOpen, onClose, onAddEntry, onAddFolder, onReorder }) => isOpen ? (<><div className="add-menu-overlay" onClick={onClose} /><div className="add-menu"><div className="add-menu-item" onClick={() => { onReorder(); onClose(); }}><span>↕️</span><span>调整排序</span></div><div className="add-menu-item" onClick={() => { onAddFolder(); onClose(); }}><span>📁</span><span>新建分类</span></div><div className="add-menu-item" onClick={() => { onAddEntry(); onClose(); }}><span>📄</span><span>新建词条</span></div></div></>) : null;
+const AddMenu = ({ isOpen, onClose, onAddEntry, onAddFolder, onReorder, onToggleGallery, galleryEnabled }) => isOpen ? (<><div className="add-menu-overlay" onClick={onClose} /><div className="add-menu"><div className="add-menu-item" onClick={() => { onToggleGallery(); onClose(); }}><span>🖼️</span><span>{galleryEnabled ? '关闭画廊' : '开启画廊'}</span></div><div className="add-menu-item" onClick={() => { onReorder(); onClose(); }}><span>↕️</span><span>调整排序</span></div><div className="add-menu-item" onClick={() => { onAddFolder(); onClose(); }}><span>📁</span><span>新建分类</span></div><div className="add-menu-item" onClick={() => { onAddEntry(); onClose(); }}><span>📄</span><span>新建词条</span></div></div></>) : null;
 
 const ReorderList = ({ entries, onReorder, onExit }) => {
   const [di, setDi] = useState(null); // dragging index (原始位置)
@@ -452,6 +473,25 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportMenuPos, setExportMenuPos] = useState({ x: 0, y: 0 });
+  const [imageToDelete, setImageToDelete] = useState(null);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryPreviewImage, setGalleryPreviewImage] = useState(null);
+  const [galleryContextMenu, setGalleryContextMenu] = useState({ isOpen: false, image: null, position: { x: 0, y: 0 } });
+  const [showProfile, setShowProfile] = useState(false);
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || '创作者');
+  const [galleryViewIndex, setGalleryViewIndex] = useState(0);
+  const [galleryViewScale, setGalleryViewScale] = useState(1);
+  const [galleryViewPos, setGalleryViewPos] = useState({ x: 0, y: 0 });
+  const [galleryAnimating, setGalleryAnimating] = useState(false);
+  const [galleryDragX, setGalleryDragX] = useState(0);
+  const [galleryIsDragging, setGalleryIsDragging] = useState(false);
+  const galleryTouchStart = useRef({ x: 0, y: 0, dist: 0, scale: 1, time: 0 });
+  const galleryLongPressTimer = useRef(null);
+  const contentLongPressTimer = useRef(null);
+  const exportRef = useRef(null);
+  const galleryUploadRef = useRef(null);
   const longPressTimer = useRef(null);
   const touchStartX = useRef(0);
   const editorRef = useRef(null);
@@ -468,9 +508,13 @@ export default function App() {
   // 恢复选区
   const restoreSelection = () => {
     if (savedSelection.current) {
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(savedSelection.current);
+      const ed = document.querySelector('.rich-editor');
+      if (ed) {
+        ed.focus();
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedSelection.current);
+      }
     }
   };
 
@@ -680,6 +724,274 @@ export default function App() {
   const handleImageUpload = async (e) => { const f = e.target.files[0]; if (f) { const c = await compressImage(f, 600); const ed = document.querySelector('.rich-editor'); if (ed) { ed.focus(); document.execCommand('insertHTML', false, `<p style="text-align:center"><img src="${c}" style="max-width:100%;border-radius:8px" /></p>`); ed.forceSave?.(); } } e.target.value = ''; };
   const handleEntrySwipe = (e, dx) => { if (dx < -80 && (e.isFolder || e.children?.length > 0)) { setSlideAnim('slide-in'); setNavigationStack(p => [...p, currentEntry].filter(Boolean)); setCurrentEntry(e); setViewMode('merged'); setTimeout(() => initMerged(e), 50); setTimeout(() => setSlideAnim(''), 250); } };
 
+  // 点击图片，弹出删除确认
+  const handleImageClick = (imgElement) => {
+    setImageToDelete(imgElement);
+    setConfirmModal({
+      isOpen: true,
+      title: '删除图片',
+      message: '确定要删除这张图片吗？',
+      onConfirm: () => {
+        if (imgElement) {
+          const parent = imgElement.parentElement;
+          if (parent && parent.tagName === 'P' && parent.childNodes.length === 1) {
+            parent.remove();
+          } else {
+            imgElement.remove();
+          }
+          // 保存
+          const ed = document.querySelector('.rich-editor');
+          if (ed) ed.forceSave?.();
+        }
+        setImageToDelete(null);
+        setConfirmModal({ isOpen: false });
+      }
+    });
+  };
+
+  // ========== 画廊功能 ==========
+  
+  // 开启/关闭画廊
+  const toggleGallery = () => {
+    if (!currentBook) return;
+    const newGallery = currentBook.gallery ? { ...currentBook.gallery, enabled: !currentBook.gallery.enabled } : { enabled: true, images: [] };
+    const updatedBook = { ...currentBook, gallery: newGallery };
+    setCurrentBook(updatedBook);
+    setData(prev => ({
+      ...prev,
+      books: prev.books.map(b => b.id === currentBook.id ? updatedBook : b)
+    }));
+  };
+
+  // 上传图片到画廊
+  const uploadGalleryImage = async (e) => {
+    const files = e.target.files;
+    if (!files || !currentBook) return;
+    
+    const currentImages = currentBook.gallery?.images || [];
+    const currentFeaturedCount = currentImages.filter(img => img.featured).length;
+    
+    const newImages = [];
+    for (let i = 0; i < files.length; i++) {
+      const compressed = await compressImage(files[i], 800);
+      // 前6张自动featured，之后的不自动
+      const shouldFeatured = (currentImages.length + i) < 6 && (currentFeaturedCount + newImages.filter(img => img.featured).length) < 6;
+      newImages.push({
+        id: generateId(),
+        src: compressed,
+        featured: shouldFeatured
+      });
+    }
+    
+    const updatedGallery = {
+      ...currentBook.gallery,
+      images: [...currentImages, ...newImages]
+    };
+    const updatedBook = { ...currentBook, gallery: updatedGallery };
+    setCurrentBook(updatedBook);
+    setData(prev => ({
+      ...prev,
+      books: prev.books.map(b => b.id === currentBook.id ? updatedBook : b)
+    }));
+    
+    e.target.value = '';
+  };
+
+  // 删除画廊图片
+  const deleteGalleryImage = (imageId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '删除图片',
+      message: '确定要删除这张图片吗？',
+      onConfirm: () => {
+        const updatedGallery = {
+          ...currentBook.gallery,
+          images: currentBook.gallery.images.filter(img => img.id !== imageId)
+        };
+        const updatedBook = { ...currentBook, gallery: updatedGallery };
+        setCurrentBook(updatedBook);
+        setData(prev => ({
+          ...prev,
+          books: prev.books.map(b => b.id === currentBook.id ? updatedBook : b)
+        }));
+        setGalleryContextMenu({ isOpen: false, image: null, position: { x: 0, y: 0 } });
+        setConfirmModal({ isOpen: false });
+      }
+    });
+  };
+
+  // 切换精选状态
+  const toggleFeatured = (imageId) => {
+    const currentImages = currentBook.gallery.images;
+    const targetImage = currentImages.find(img => img.id === imageId);
+    const currentFeaturedCount = currentImages.filter(img => img.featured).length;
+    
+    // 如果要设为featured，检查是否已达上限
+    if (!targetImage.featured && currentFeaturedCount >= 6) {
+      alert('最多只能展示6张图片');
+      setGalleryContextMenu({ isOpen: false, image: null, position: { x: 0, y: 0 } });
+      return;
+    }
+    
+    const updatedGallery = {
+      ...currentBook.gallery,
+      images: currentImages.map(img => img.id === imageId ? { ...img, featured: !img.featured } : img)
+    };
+    const updatedBook = { ...currentBook, gallery: updatedGallery };
+    setCurrentBook(updatedBook);
+    setData(prev => ({
+      ...prev,
+      books: prev.books.map(b => b.id === currentBook.id ? updatedBook : b)
+    }));
+    setGalleryContextMenu({ isOpen: false, image: null, position: { x: 0, y: 0 } });
+  };
+
+  // 画廊图片长按
+  const handleGalleryImageLongPress = (e, image) => {
+    const t = e.touches ? e.touches[0] : e;
+    const pos = { x: t.clientX, y: t.clientY };
+    if (navigator.vibrate) navigator.vibrate(30);
+    setGalleryContextMenu({ isOpen: true, image, position: pos });
+  };
+
+  // 打开画廊大图预览
+  const openGalleryPreview = (image) => {
+    const images = currentBook?.gallery?.images || [];
+    const index = images.findIndex(img => img.id === image.id);
+    setGalleryViewIndex(index >= 0 ? index : 0);
+    setGalleryViewScale(1);
+    setGalleryViewPos({ x: 0, y: 0 });
+    setGalleryAnimating(true);
+    setGalleryPreviewImage(image);
+    setTimeout(() => setGalleryAnimating(false), 300);
+  };
+
+  // 关闭画廊大图预览
+  const closeGalleryPreview = () => {
+    setGalleryPreviewImage(null);
+    setGalleryViewScale(1);
+    setGalleryViewPos({ x: 0, y: 0 });
+    setGalleryDragX(0);
+  };
+
+  // 画廊大图完成滑动
+  const finishGallerySwipe = (dx) => {
+    const images = currentBook?.gallery?.images || [];
+    if (images.length <= 1) {
+      setGalleryDragX(0);
+      return;
+    }
+    
+    const threshold = 80;
+    let newIndex = galleryViewIndex;
+    
+    if (dx < -threshold && galleryViewIndex < images.length - 1) {
+      newIndex = galleryViewIndex + 1;
+    } else if (dx > threshold && galleryViewIndex > 0) {
+      newIndex = galleryViewIndex - 1;
+    }
+    
+    setGalleryDragX(0);
+    setGalleryIsDragging(false);
+    
+    if (newIndex !== galleryViewIndex) {
+      setGalleryViewIndex(newIndex);
+      setGalleryPreviewImage(images[newIndex]);
+      setGalleryViewScale(1);
+    }
+  };
+
+  // 保存用户名
+  const saveUserName = (name) => {
+    setUserName(name);
+    localStorage.setItem('userName', name);
+  };
+
+  // 统计数据
+  const totalStats = useMemo(() => {
+    let totalWords = 0;
+    let totalEntries = 0;
+    let totalImages = 0;
+    data.books.forEach(b => {
+      totalWords += countWords(b.entries);
+      totalEntries += countEntries(b.entries);
+      totalImages += b.gallery?.images?.length || 0;
+    });
+    return { books: data.books.length, entries: totalEntries, words: totalWords, images: totalImages };
+  }, [data.books]);
+
+  // 长按内容区域显示导出菜单
+  const handleContentLongPressStart = (e) => {
+    if (!isReadOnly) return;
+    const t = e.touches ? e.touches[0] : e;
+    const pos = { x: t.clientX, y: t.clientY };
+    contentLongPressTimer.current = setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate(30);
+      setExportMenuPos(pos);
+      setShowExportMenu(true);
+    }, 500);
+  };
+  const handleContentLongPressEnd = () => {
+    if (contentLongPressTimer.current) {
+      clearTimeout(contentLongPressTimer.current);
+      contentLongPressTimer.current = null;
+    }
+  };
+
+  // 导出长图功能
+  const handleExportImage = async () => {
+    setShowExportMenu(false);
+    const el = exportRef.current;
+    if (!el) return;
+    
+    // 动态加载 html2canvas
+    try {
+      if (!window.html2canvas) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+        
+        await new Promise(r => setTimeout(r, 100));
+      }
+      
+      // 临时添加导出样式
+      el.style.background = '#fff';
+      el.style.borderRadius = '16px';
+      el.style.padding = '24px 20px';
+      el.style.boxShadow = '0 4px 20px rgba(45,48,71,.1)';
+      
+      const canvas = await window.html2canvas(el, {
+        backgroundColor: '#f5f0e8',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        x: -16,
+        y: -16,
+        width: el.offsetWidth + 32,
+        height: el.offsetHeight + 32
+      });
+      
+      // 移除临时样式
+      el.style.background = '';
+      el.style.borderRadius = '';
+      el.style.padding = '';
+      el.style.boxShadow = '';
+      
+      const link = document.createElement('a');
+      link.download = `${currentEntry?.title || '词条'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('导出失败:', err);
+      alert('导出失败，请稍后重试');
+    }
+  };
+
   const currentEntries = currentEntry?.children || currentBook?.entries || [];
   
   // 从最新数据中获取当前 entry（确保排序等更新后能同步）
@@ -689,9 +1001,46 @@ export default function App() {
   const isEditing = !isReadOnly && (viewMode === 'single' || viewMode === 'merged');
   const hasActiveFormat = activeFormats.bold || activeFormats.italic || activeFormats.underline || activeFormats.strike || activeFormats.size !== 'medium';
 
-  if (!currentBook) return (<div className="app bookshelf-view"><header className="bookshelf-header"><h1>一页穹顶</h1><p className="subtitle">拾起每一颗星星</p><p className="subtitle">便能拥有属于你的宇宙</p><button className="search-star" onClick={() => setShowSearch(true)}>⭐</button></header><div className="bookshelf">{data.books.map(b => (<div key={b.id} className="book-card" style={{ '--book-color': b.color }} onClick={() => handleBookSelect(b)} onTouchStart={e => handleLongPressStart(e, 'book', b)} onTouchEnd={handleLongPressEnd} onTouchMove={handleLongPressEnd}><div className="book-spine" /><div className="book-cover">{b.coverImage ? <img src={b.coverImage} alt="" className="cover-image" /> : <span className="book-emoji">{b.cover}</span>}</div><div className="book-shadow" /><div className="book-meta"><h2>{b.title}</h2>{b.author && <p>{b.author} 著</p>}</div></div>))}<div className="book-card add-book" onClick={() => { setEditingBook(null); setShowBookModal(true); }}><div className="book-cover"><span className="add-icon">+</span></div><div className="book-meta"><h2>新建世界</h2></div></div></div><BookModal isOpen={showBookModal} onClose={() => { setShowBookModal(false); setEditingBook(null); }} onSave={handleAddBook} editingBook={editingBook} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><SearchModal isOpen={showSearch} onClose={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); }} query={searchQuery} setQuery={setSearchQuery} results={searchResults} onSearch={performSearch} onResultClick={handleSearchResultClick} /><style>{styles}</style></div>);
+  if (!currentBook) return (<div className="app bookshelf-view"><header className="bookshelf-header"><h1>一页穹顶</h1><p className="subtitle">拾起每一颗星星</p><p className="subtitle">便能拥有属于你的宇宙</p><button className="search-star" onClick={() => setShowSearch(true)}>⭐</button></header><div className="bookshelf">{data.books.map(b => (<div key={b.id} className="book-card" style={{ '--book-color': b.color }} onClick={() => handleBookSelect(b)} onTouchStart={e => handleLongPressStart(e, 'book', b)} onTouchEnd={handleLongPressEnd} onTouchMove={handleLongPressEnd}><div className="book-spine" /><div className="book-cover">{b.coverImage ? <img src={b.coverImage} alt="" className="cover-image" /> : <span className="book-emoji">{b.cover}</span>}</div><div className="book-shadow" /><div className="book-meta"><h2>{b.title}</h2>{b.author && <p>{b.author} 著</p>}</div></div>))}<div className="book-card add-book" onClick={() => { setEditingBook(null); setShowBookModal(true); }}><div className="book-cover"><span className="add-icon">+</span></div><div className="book-meta"><h2>新建世界</h2></div></div></div><div className="shelf-globe-container" onClick={() => setShowProfile(true)}><div className="shelf-globe-arc" /></div><BookModal isOpen={showBookModal} onClose={() => { setShowBookModal(false); setEditingBook(null); }} onSave={handleAddBook} editingBook={editingBook} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><SearchModal isOpen={showSearch} onClose={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); }} query={searchQuery} setQuery={setSearchQuery} results={searchResults} onSearch={performSearch} onResultClick={handleSearchResultClick} />{showProfile && (<div className="profile-page"><div className="profile-header"><button className="profile-close" onClick={() => setShowProfile(false)}>×</button><div className="profile-avatar">✨</div><input type="text" className="profile-name" value={userName} onChange={e => saveUserName(e.target.value)} placeholder="点击编辑名字" /></div><div className="profile-stats"><div className="stat-item"><span className="stat-number">{totalStats.books}</span><span className="stat-label">作品</span></div><div className="stat-item"><span className="stat-number">{totalStats.entries}</span><span className="stat-label">词条</span></div><div className="stat-item"><span className="stat-number">{totalStats.words.toLocaleString()}</span><span className="stat-label">总字数</span></div></div><div className="profile-menu"><div className="profile-menu-item" onClick={() => { setShowProfile(false); }}><span>📚</span><span>我的书架</span><span className="menu-arrow">›</span></div><div className="profile-menu-item"><span>🖼️</span><span>全部图片 ({totalStats.images})</span><span className="menu-arrow">›</span></div><div className="profile-menu-item"><span>⚙️</span><span>设置</span><span className="menu-arrow">›</span></div><div className="profile-menu-item"><span>💡</span><span>关于一页穹顶</span><span className="menu-arrow">›</span></div></div><div className="profile-footer"><p>一页穹顶 v1.0</p><p>拾起每一颗星星，便能拥有属于你的宇宙</p></div></div>)}<style>{styles}</style></div>);
 
-  return (<div className="app main-view"><div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}><div className="sidebar-header"><h2>{currentBook.title}</h2><button className="close-sidebar" onClick={() => setIsSidebarOpen(false)}>×</button></div><div className="sidebar-content">{currentBook.entries.map(e => <SidebarItem key={e.id} entry={e} onSelect={handleSidebarSelect} currentId={currentEntry?.id} expandedIds={expandedIds} onToggle={id => setExpandedIds(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}</div></div>{isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />}<div className="main-content" onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={e => { if (e.changedTouches[0].clientX - touchStartX.current > 80 && (currentEntry || navigationStack.length > 0)) handleBack(); }}><header className="top-bar"><div className="top-left"><button className="icon-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>{(currentEntry || navigationStack.length > 0) && <button className="icon-btn" onClick={handleBack}>←</button>}<button className="icon-btn" onClick={handleBackToShelf}>🏠</button></div><div className="breadcrumb"><span className="book-name">{currentBook.title}</span>{currentEntry && <><span className="separator">/</span><span className="current-title">{currentEntry.title}</span></>}</div><div className="top-right">{(viewMode === 'single' || viewMode === 'merged') && (<div className="read-mode-toggle" onClick={() => { if (!isReadOnly) { const ed = document.querySelector('.rich-editor'); if (ed) ed.forceSave?.(); } else if (viewMode === 'merged' && liveEntry) { initMerged(liveEntry); } setIsReadOnly(!isReadOnly); }}><span className={`toggle-label ${isReadOnly ? 'active' : ''}`}>阅读</span><div className={`toggle-switch ${!isReadOnly ? 'edit-mode' : ''}`}><div className="toggle-knob" /></div><span className={`toggle-label ${!isReadOnly ? 'active' : ''}`}>编辑</span></div>)}</div></header>{!currentEntry && currentBook.showStats && (<div className="book-info-card"><div className="info-cover">{currentBook.coverImage ? <img src={currentBook.coverImage} alt="" /> : <span>{currentBook.cover}</span>}</div><div className="info-details">{currentBook.author && <p>作者：{currentBook.author}</p>}{currentBook.tags?.length > 0 && <p>标签：{currentBook.tags.join('、')}</p>}<p>词条：{countEntries(currentBook.entries)}条</p><p>字数：{countWords(currentBook.entries).toLocaleString()}字</p></div></div>)}<main className={`content-area ${slideAnim}`}>{viewMode === 'list' && !isReorderMode && (<>{currentEntry && <div className="list-header"><h1>{currentEntry.title}</h1>{currentEntry.summary && <p className="summary">{currentEntry.summary}</p>}</div>}<p className="swipe-hint">💡 左滑合并视图 · 右滑返回 · 长按编辑</p><div className="entry-list">{currentEntries.map(e => { let tx = 0; return (<div key={e.id} className="entry-card" onClick={() => handleEntryClick(e)} onTouchStart={ev => { tx = ev.touches[0].clientX; handleLongPressStart(ev, 'entry', e); }} onTouchMove={handleLongPressEnd} onTouchEnd={ev => { handleLongPressEnd(); handleEntrySwipe(e, ev.changedTouches[0].clientX - tx); }}><div className="entry-icon">{e.isFolder ? '📁' : '📄'}</div><div className="entry-info"><h3>{e.title}{e.linkable && <span className="star-badge">⭐</span>}</h3><p>{e.summary}</p></div><span className="entry-arrow">›</span></div>); })}</div>{currentEntries.length === 0 && <div className="empty-state"><span>✨</span><p>点击右下角添加</p></div>}</>)}{viewMode === 'list' && isReorderMode && <ReorderList entries={currentEntries} onReorder={handleReorder} onExit={() => setIsReorderMode(false)} />}{viewMode === 'single' && currentEntry && (<div className="single-view"><div className="content-header">{isReadOnly ? <h1>{currentEntry.title}</h1> : <input type="text" className="editable-title" defaultValue={currentEntry.title} onBlur={ev => handleTitleChange(currentEntry.id, currentEntry.title, ev.target.value)} key={currentEntry.id + '-title'} />}{isReadOnly ? (currentEntry.summary && <p className="entry-summary">{currentEntry.summary}</p>) : <input type="text" className="editable-summary" defaultValue={currentEntry.summary || ''} placeholder="添加简介..." onBlur={ev => handleSummaryChange(currentEntry.id, ev.target.value)} key={currentEntry.id + '-summary'} />}</div>{isReadOnly ? <ContentRenderer content={currentEntry.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} /> : <RichEditor content={currentEntry.content} onSave={html => saveContent(html)} fontFamily={currentFont} activeFormats={activeFormats} />}</div>)}{viewMode === 'merged' && currentEntry && (<div className="merged-view"><div className="content-header merged-header"><h1>{currentEntry.title}</h1><p className="merged-hint">📖 合并视图</p></div>{isReadOnly ? (<div className="merged-content-read">{liveChildContent.map((it, i, arr) => (<div key={it.id} className="merged-section"><div className="section-title">• {it.title}</div><ContentRenderer content={it.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} />{i < arr.length - 1 && <div className="section-divider" />}</div>))}</div>) : (<div className="merged-content-edit">{mergedContents.map((it, i) => (<div key={it.id} className="merged-edit-section"><div className="merged-edit-header">• <input type="text" className="merged-title-input" defaultValue={it.title} onBlur={ev => handleMergedChange(i, 'title', ev.target.value)} key={it.id + '-title'} /></div><div className="merged-editor-wrap" contentEditable dangerouslySetInnerHTML={{ __html: it.content }} onBlur={ev => handleMergedChange(i, 'content', ev.target.innerHTML)} style={{ fontFamily: currentFont }} /></div>))}<button className="add-merged-entry-btn" onClick={handleAddMerged}>+ 添加词条</button></div>)}</div>)}</main>{viewMode === 'list' && !isReorderMode && (<><button className={`fab ${showAddMenu ? 'active' : ''}`} onClick={() => setShowAddMenu(!showAddMenu)}><span style={{ transform: showAddMenu ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span></button><AddMenu isOpen={showAddMenu} onClose={() => setShowAddMenu(false)} onAddEntry={() => { setEditingEntry(null); setIsCreatingFolder(false); setShowEntryModal(true); }} onAddFolder={() => { setEditingEntry(null); setIsCreatingFolder(true); setShowEntryModal(true); }} onReorder={() => setIsReorderMode(true)} /></>)}{isEditing && <EditorToolbar onIndent={handleIndent} onFormat={() => setShowFormatMenu(true)} onAlign={() => setShowAlignMenu(true)} onFont={() => setShowFontMenu(true)} onImage={handleImageUpload} hasActive={hasActiveFormat} />}<TextFormatMenu isOpen={showFormatMenu} onClose={() => setShowFormatMenu(false)} activeFormats={activeFormats} onToggleFormat={handleToggleFormat} /><AlignMenu isOpen={showAlignMenu} onClose={() => setShowAlignMenu(false)} onAlign={handleAlign} /><FontMenu isOpen={showFontMenu} onClose={() => setShowFontMenu(false)} onSelectFont={setCurrentFont} currentFont={currentFont} /></div><EntryModal isOpen={showEntryModal} onClose={() => { setShowEntryModal(false); setEditingEntry(null); }} onSave={editingEntry ? handleUpdateEntry : handleAddEntry} editingEntry={editingEntry} parentTitle={currentEntry?.title} isFolder={isCreatingFolder} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} /><style>{styles}</style></div>);
+  return (<div className="app main-view"><div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}><div className="sidebar-header"><h2>{currentBook.title}</h2><button className="close-sidebar" onClick={() => setIsSidebarOpen(false)}>×</button></div><div className="sidebar-content">{currentBook.entries.map(e => <SidebarItem key={e.id} entry={e} onSelect={handleSidebarSelect} currentId={currentEntry?.id} expandedIds={expandedIds} onToggle={id => setExpandedIds(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}</div></div>{isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />}<div className="main-content" onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={e => { if (e.changedTouches[0].clientX - touchStartX.current > 80 && (currentEntry || navigationStack.length > 0)) handleBack(); }}><header className="top-bar"><div className="top-left"><button className="icon-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>{(currentEntry || navigationStack.length > 0) && <button className="icon-btn" onClick={handleBack}>←</button>}<button className="icon-btn" onClick={handleBackToShelf}>🏠</button></div><div className="breadcrumb"><span className="book-name">{currentBook.title}</span>{currentEntry && <><span className="separator">/</span><span className="current-title">{currentEntry.title}</span></>}</div><div className="top-right">{(viewMode === 'single' || viewMode === 'merged') && (<div className="read-mode-toggle" onClick={() => { if (!isReadOnly) { const ed = document.querySelector('.rich-editor'); if (ed) ed.forceSave?.(); } else if (viewMode === 'merged' && liveEntry) { initMerged(liveEntry); } setIsReadOnly(!isReadOnly); }}><span className={`toggle-label ${isReadOnly ? 'active' : ''}`}>阅读</span><div className={`toggle-switch ${!isReadOnly ? 'edit-mode' : ''}`}><div className="toggle-knob" /></div><span className={`toggle-label ${!isReadOnly ? 'active' : ''}`}>编辑</span></div>)}</div></header>{!currentEntry && currentBook.showStats && (<div className="book-info-card"><div className="info-cover">{currentBook.coverImage ? <img src={currentBook.coverImage} alt="" /> : <span>{currentBook.cover}</span>}</div><div className="info-details">{currentBook.author && <p>作者：{currentBook.author}</p>}{currentBook.tags?.length > 0 && <p>标签：{currentBook.tags.join('、')}</p>}<p>词条：{countEntries(currentBook.entries)}条</p><p>字数：{countWords(currentBook.entries).toLocaleString()}字</p></div></div>)}{!currentEntry && currentBook.gallery?.enabled && (<div className="gallery-preview-strip"><div className="gallery-preview-scroll">{currentBook.gallery.images?.filter(img => img.featured).map(img => (<div key={img.id} className="gallery-strip-item" onClick={() => openGalleryPreview(img)}><img src={img.src} alt="" /></div>))}{(!currentBook.gallery.images?.filter(img => img.featured).length) && (<div className="gallery-strip-empty" onClick={() => setShowGallery(true)}><span>+</span><p>添加展示图片</p></div>)}</div><button className="gallery-enter-btn" onClick={() => setShowGallery(true)}>进入画廊 ›</button></div>)}<main className={`content-area ${slideAnim}`}>{viewMode === 'list' && !isReorderMode && (<>{currentEntry && <div className="list-header"><h1>{currentEntry.title}</h1>{currentEntry.summary && <p className="summary">{currentEntry.summary}</p>}</div>}<p className="swipe-hint">💡 左滑合并视图 · 右滑返回 · 长按编辑</p><div className="entry-list">{currentEntries.map(e => { let tx = 0; return (<div key={e.id} className="entry-card" onClick={() => handleEntryClick(e)} onTouchStart={ev => { tx = ev.touches[0].clientX; handleLongPressStart(ev, 'entry', e); }} onTouchMove={handleLongPressEnd} onTouchEnd={ev => { handleLongPressEnd(); handleEntrySwipe(e, ev.changedTouches[0].clientX - tx); }}><div className="entry-icon">{e.isFolder ? '📁' : '📄'}</div><div className="entry-info"><h3>{e.title}{e.linkable && <span className="star-badge">⭐</span>}</h3><p>{e.summary}</p></div><span className="entry-arrow">›</span></div>); })}</div>{currentEntries.length === 0 && <div className="empty-state"><span>✨</span><p>点击右下角添加</p></div>}</>)}{viewMode === 'list' && isReorderMode && <ReorderList entries={currentEntries} onReorder={handleReorder} onExit={() => setIsReorderMode(false)} />}{viewMode === 'single' && currentEntry && (<div className="single-view"><div className="export-content" ref={exportRef}><div className="content-header">{isReadOnly ? <h1>{currentEntry.title}</h1> : <input type="text" className="editable-title" defaultValue={currentEntry.title} onBlur={ev => handleTitleChange(currentEntry.id, currentEntry.title, ev.target.value)} key={currentEntry.id + '-title'} />}{isReadOnly ? (currentEntry.summary && <p className="entry-summary">{currentEntry.summary}</p>) : <input type="text" className="editable-summary" defaultValue={currentEntry.summary || ''} placeholder="添加简介..." onBlur={ev => handleSummaryChange(currentEntry.id, ev.target.value)} key={currentEntry.id + '-summary'} />}</div><div onTouchStart={isReadOnly ? handleContentLongPressStart : undefined} onTouchEnd={isReadOnly ? handleContentLongPressEnd : undefined} onTouchMove={isReadOnly ? handleContentLongPressEnd : undefined}>{isReadOnly ? <ContentRenderer content={currentEntry.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} /> : <RichEditor content={currentEntry.content} onSave={html => saveContent(html)} fontFamily={currentFont} activeFormats={activeFormats} onImageClick={handleImageClick} />}</div></div><div className="word-count">{countSingleEntryWords(currentEntry.content).toLocaleString()} 字</div></div>)}{viewMode === 'merged' && currentEntry && (<div className="merged-view">{isReadOnly ? (<div ref={exportRef}><div className="content-header merged-header"><h1>{currentEntry.title}</h1><p className="merged-hint">📖 合并视图</p></div><div className="merged-content-read" onTouchStart={handleContentLongPressStart} onTouchEnd={handleContentLongPressEnd} onTouchMove={handleContentLongPressEnd}>{liveChildContent.map((it, i, arr) => (<div key={it.id} className="merged-section"><div className="section-title">• {it.title}</div><ContentRenderer content={it.content} allTitlesMap={allTitlesMap} currentBookId={currentBook.id} onLinkClick={handleLinkClick} fontFamily={currentFont} />{i < arr.length - 1 && <div className="section-divider" />}</div>))}</div></div>) : (<><div className="content-header merged-header"><h1>{currentEntry.title}</h1><p className="merged-hint">📖 合并视图</p></div><div className="merged-content-edit">{mergedContents.map((it, i) => (<div key={it.id} className="merged-edit-section"><div className="merged-edit-header">• <input type="text" className="merged-title-input" defaultValue={it.title} onBlur={ev => handleMergedChange(i, 'title', ev.target.value)} key={it.id + '-title'} /></div><div className="merged-editor-wrap" contentEditable dangerouslySetInnerHTML={{ __html: it.content }} onBlur={ev => handleMergedChange(i, 'content', ev.target.innerHTML)} style={{ fontFamily: currentFont }} /></div>))}<button className="add-merged-entry-btn" onClick={handleAddMerged}>+ 添加词条</button></div></>)}<div className="word-count">{liveChildContent.reduce((sum, it) => sum + countSingleEntryWords(it.content), 0).toLocaleString()} 字</div></div>)}</main>{viewMode === 'list' && !isReorderMode && (<><button className={`fab ${showAddMenu ? 'active' : ''}`} onClick={() => setShowAddMenu(!showAddMenu)}><span style={{ transform: showAddMenu ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span></button><AddMenu isOpen={showAddMenu} onClose={() => setShowAddMenu(false)} onAddEntry={() => { setEditingEntry(null); setIsCreatingFolder(false); setShowEntryModal(true); }} onAddFolder={() => { setEditingEntry(null); setIsCreatingFolder(true); setShowEntryModal(true); }} onReorder={() => setIsReorderMode(true)} onToggleGallery={toggleGallery} galleryEnabled={currentBook?.gallery?.enabled} /></>)}{isEditing && <EditorToolbar onIndent={handleIndent} onFormat={() => { saveSelection(); setShowFormatMenu(true); }} onAlign={() => { saveSelection(); setShowAlignMenu(true); }} onFont={() => { saveSelection(); setShowFontMenu(true); }} onImage={handleImageUpload} hasActive={hasActiveFormat} />}<TextFormatMenu isOpen={showFormatMenu} onClose={() => { setShowFormatMenu(false); restoreSelection(); }} activeFormats={activeFormats} onToggleFormat={handleToggleFormat} /><AlignMenu isOpen={showAlignMenu} onClose={() => { setShowAlignMenu(false); restoreSelection(); }} onAlign={handleAlign} /><FontMenu isOpen={showFontMenu} onClose={() => { setShowFontMenu(false); restoreSelection(); }} onSelectFont={setCurrentFont} currentFont={currentFont} /></div><EntryModal isOpen={showEntryModal} onClose={() => { setShowEntryModal(false); setEditingEntry(null); }} onSave={editingEntry ? handleUpdateEntry : handleAddEntry} editingEntry={editingEntry} parentTitle={currentEntry?.title} isFolder={isCreatingFolder} /><ContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onClose={() => setContextMenu({ ...contextMenu, isOpen: false })} options={contextMenu.options} /><ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ isOpen: false })} />{showGallery && (<div className="gallery-page" onClick={e => e.stopPropagation()}><div className="gallery-header"><button className="gallery-back" onClick={() => { setShowGallery(false); setGalleryContextMenu({ isOpen: false, image: null, position: { x: 0, y: 0 } }); }}>← 返回</button><h2>{currentBook?.title}</h2><button className="gallery-upload" onClick={() => galleryUploadRef.current?.click()}>+ 添加</button><input ref={galleryUploadRef} type="file" accept="image/*" multiple onChange={uploadGalleryImage} style={{ display: 'none' }} /></div><div className="gallery-grid">{currentBook?.gallery?.images?.map(img => (<div key={img.id} className="gallery-item" onTouchStart={(e) => { e.stopPropagation(); const touch = e.touches[0]; galleryLongPressTimer.current = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(30); setGalleryContextMenu({ isOpen: true, image: img, position: { x: touch.clientX, y: touch.clientY } }); }, 500); }} onTouchEnd={(e) => { e.stopPropagation(); if (galleryLongPressTimer.current) { clearTimeout(galleryLongPressTimer.current); galleryLongPressTimer.current = null; } }} onTouchMove={(e) => { if (galleryLongPressTimer.current) { clearTimeout(galleryLongPressTimer.current); galleryLongPressTimer.current = null; } }} onClick={(e) => { e.stopPropagation(); if (!galleryContextMenu.isOpen) openGalleryPreview(img); }}><img src={img.src} alt="" draggable={false} />{img.featured && <span className="featured-star">★</span>}</div>))}{(!currentBook?.gallery?.images || currentBook.gallery.images.length === 0) && (<div className="gallery-empty"><span>🖼️</span><p>还没有图片</p><p>点击右上角添加</p></div>)}</div>{galleryContextMenu.isOpen && (<><div className="gallery-context-overlay" onClick={(e) => { e.stopPropagation(); setGalleryContextMenu({ isOpen: false, image: null, position: { x: 0, y: 0 } }); }} /><div className="context-menu" style={{ top: galleryContextMenu.position.y, left: Math.min(galleryContextMenu.position.x, window.innerWidth - 180) }}><div className="context-item" onClick={(e) => { e.stopPropagation(); toggleFeatured(galleryContextMenu.image.id); }}><span className="context-icon">{galleryContextMenu.image.featured ? '☆' : '★'}</span>{galleryContextMenu.image.featured ? '取消展示' : '展示'}</div><div className="context-item danger" onClick={(e) => { e.stopPropagation(); deleteGalleryImage(galleryContextMenu.image.id); }}><span className="context-icon">🗑️</span>删除图片</div></div></>)}</div>)}{galleryPreviewImage && (<div className="gallery-viewer" onTouchStart={(e) => {
+  e.stopPropagation();
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    galleryTouchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: Math.sqrt(dx*dx + dy*dy), scale: galleryViewScale, time: Date.now() };
+  } else {
+    galleryTouchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, scale: galleryViewScale, time: Date.now() };
+    setGalleryIsDragging(true);
+  }
+}} onTouchMove={(e) => {
+  e.stopPropagation();
+  if (e.touches.length === 2 && galleryTouchStart.current.dist > 0) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const scale = Math.max(1, Math.min(4, galleryTouchStart.current.scale * (dist / galleryTouchStart.current.dist)));
+    setGalleryViewScale(scale);
+  } else if (e.touches.length === 1 && galleryViewScale === 1) {
+    const dx = e.touches[0].clientX - galleryTouchStart.current.x;
+    setGalleryDragX(dx);
+  }
+}} onTouchEnd={(e) => {
+  e.stopPropagation();
+  const elapsed = Date.now() - galleryTouchStart.current.time;
+  const dx = galleryDragX;
+  
+  if (galleryViewScale === 1 && Math.abs(dx) > 20) {
+    finishGallerySwipe(dx);
+  } else if (galleryViewScale === 1 && Math.abs(dx) < 10 && elapsed < 200) {
+    closeGalleryPreview();
+  } else {
+    setGalleryDragX(0);
+    setGalleryIsDragging(false);
+  }
+  
+  if (galleryViewScale < 1.1) setGalleryViewScale(1);
+}} onClick={(e) => { e.stopPropagation(); if (!galleryIsDragging && galleryViewScale === 1) closeGalleryPreview(); }}><div className="gallery-viewer-counter">{galleryViewIndex + 1} / {currentBook?.gallery?.images?.length || 0}</div><div className="gallery-viewer-track" style={{ transform: `translateX(${galleryDragX}px)`, transition: galleryIsDragging ? 'none' : 'transform 0.3s ease' }}>{currentBook?.gallery?.images?.map((img, idx) => (<div key={img.id} className="gallery-viewer-slide" style={{ transform: `translateX(${(idx - galleryViewIndex) * 100}%)` }}><img src={img.src} alt="" style={{ transform: `scale(${idx === galleryViewIndex ? galleryViewScale : 1})` }} draggable={false} /></div>))}</div></div>)}{showExportMenu && (<><div className="export-menu-overlay" onClick={() => setShowExportMenu(false)} /><div className="export-menu" style={{ top: exportMenuPos.y - 60, left: Math.min(exportMenuPos.x - 60, window.innerWidth - 140) }}><div className="export-menu-item" onClick={handleExportImage}><span>📷</span><span>导出长图</span></div></div></>)}<style>{styles}</style></div>);
 }
 
 const styles = `
@@ -699,7 +1048,7 @@ const styles = `
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#root{height:100%;overflow:hidden}
 .app{height:100%;font-family:'Noto Serif SC',serif;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.bookshelf-view{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f0f23 100%);padding:60px 20px;min-height:100%}
+.bookshelf-view{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f0f23 100%);padding:60px 20px 0;min-height:100vh;display:flex;flex-direction:column;box-sizing:border-box}
 .bookshelf-header{text-align:center;margin-bottom:50px}
 .bookshelf-header h1{font-family:'ZCOOL XiaoWei',serif;font-size:2.5rem;color:#f4e4c1;letter-spacing:.3em;text-shadow:0 0 40px rgba(244,228,193,.3);margin-bottom:16px}
 .subtitle{color:rgba(244,228,193,.6);font-size:.95rem;letter-spacing:.15em;line-height:1.8}
@@ -720,7 +1069,8 @@ html,body,#root{height:100%;overflow:hidden}
 .add-book{opacity:.5}
 .add-book .book-cover{border:2px dashed rgba(244,228,193,.3)}
 .add-icon{font-size:2.5rem;color:rgba(244,228,193,.5)}
-.main-view{background:linear-gradient(180deg,#faf8f3 0%,#f5f0e8 100%);display:flex;flex-direction:column}
+.main-view{background:linear-gradient(180deg,#faf8f3 0%,#f5f0e8 100%);display:flex;flex-direction:column;height:100%;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .sidebar{position:fixed;left:0;top:0;width:280px;max-width:85vw;height:100%;background:linear-gradient(180deg,#2D3047 0%,#1a1a2e 100%);z-index:1000;transform:translateX(-100%);transition:transform .3s;display:flex;flex-direction:column}
 .sidebar.open{transform:translateX(0)}
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999}
@@ -889,4 +1239,61 @@ html,body,#root{height:100%;overflow:hidden}
 .result-path{font-size:.8rem;color:#8B7355;margin-bottom:2px}
 .result-summary{font-size:.85rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .result-arrow{color:#ccc;font-size:1.2rem}
+.word-count{text-align:center;font-size:.8rem;color:#aaa;padding:20px 0;margin-top:20px;border-top:1px solid rgba(45,48,71,.1)}
+.export-menu-overlay{position:fixed;inset:0;z-index:1998}
+.export-menu{position:fixed;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);overflow:hidden;z-index:1999;min-width:120px}
+.export-menu-item{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;font-size:.95rem}
+.export-menu-item:active{background:#f5f5f5}
+.gallery-page{position:fixed;inset:0;background:linear-gradient(180deg,#faf8f3 0%,#f5f0e8 100%);z-index:2500;display:flex;flex-direction:column}
+.gallery-header{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(45,48,71,.1);background:rgba(250,248,243,.95);backdrop-filter:blur(10px)}
+.gallery-back{background:none;border:none;color:#2D3047;font-size:1rem;cursor:pointer;font-family:'Noto Serif SC',serif}
+.gallery-header h2{font-family:'ZCOOL XiaoWei',serif;font-size:1.3rem;color:#2D3047}
+.gallery-upload{background:none;border:none;color:#8B7355;font-size:1rem;cursor:pointer;font-family:'Noto Serif SC',serif}
+.gallery-grid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
+.gallery-item{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer}
+.gallery-item img{width:100%;height:100%;object-fit:cover}
+.gallery-item:active{transform:scale(.98)}
+.gallery-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:#999}
+.gallery-empty span{font-size:3rem;display:block;margin-bottom:16px}
+.gallery-context-overlay{position:fixed;inset:0;z-index:100}
+.gallery-viewer{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:3000;touch-action:none;overflow:hidden}
+.gallery-viewer-counter{position:absolute;top:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:.9rem;background:rgba(0,0,0,.4);padding:6px 16px;border-radius:20px;z-index:10}
+.gallery-viewer-track{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.gallery-viewer-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px}
+.gallery-viewer-slide img{max-width:100%;max-height:90vh;object-fit:contain;border-radius:4px;transition:transform .15s ease;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.gallery-preview-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px}
+.gallery-preview-modal img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.gallery-strip-item{width:120px;height:120px;flex-shrink:0;border-radius:12px;overflow:hidden;cursor:pointer}
+.gallery-strip-item img{width:100%;height:100%;object-fit:cover}
+.gallery-strip-item:active{transform:scale(.97)}
+.gallery-preview-strip{margin:0 16px 16px;padding:16px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(45,48,71,.08)}
+.gallery-preview-strip .gallery-preview-scroll{display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;-ms-overflow-style:none}
+.gallery-preview-strip .gallery-preview-scroll::-webkit-scrollbar{display:none}
+.gallery-strip-empty{width:120px;height:120px;flex-shrink:0;border-radius:12px;border:2px dashed rgba(139,115,85,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#8B7355;cursor:pointer;gap:4px}
+.gallery-strip-empty span{font-size:2rem}
+.gallery-strip-empty p{font-size:.75rem;margin:0}
+.gallery-enter-btn{display:block;width:100%;background:none;border:none;color:#8B7355;font-size:.9rem;cursor:pointer;text-align:center;padding:8px 0 0;font-family:'Noto Serif SC',serif}
+.shelf-globe-container{position:relative;width:100%;height:80px;margin-top:auto;cursor:pointer;overflow:hidden}
+.shelf-globe-arc{position:absolute;bottom:-320px;left:50%;transform:translateX(-50%);width:500px;height:400px;border-radius:50%;background:linear-gradient(180deg,#C9A227 0%,#B8860B 50%,#996515 100%);box-shadow:0 -10px 60px 20px rgba(201,162,39,.4),0 -5px 30px 10px rgba(201,162,39,.6)}
+.shelf-globe-arc::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:100%;height:50px;background:linear-gradient(180deg,rgba(255,223,120,.5) 0%,transparent 100%);border-radius:50% 50% 0 0}
+.featured-star{position:absolute;top:6px;right:6px;color:#FFD700;font-size:1.2rem;text-shadow:0 0 8px rgba(255,215,0,.8),0 2px 4px rgba(0,0,0,.3)}
+.profile-page{position:fixed;inset:0;background:linear-gradient(180deg,#2D3047 0%,#1a1d2e 100%);z-index:3000;display:flex;flex-direction:column;overflow-y:auto}
+.profile-header{text-align:center;padding:60px 20px 30px;position:relative}
+.profile-close{position:absolute;top:20px;right:20px;background:none;border:none;color:#f4e4c1;font-size:1.8rem;cursor:pointer;opacity:.7}
+.profile-avatar{width:80px;height:80px;margin:0 auto 16px;background:linear-gradient(135deg,#4A3D6A,#8B7355);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.profile-name{background:none;border:none;color:#f4e4c1;font-size:1.3rem;text-align:center;width:100%;font-family:'ZCOOL XiaoWei',serif;padding:8px}
+.profile-name:focus{outline:none;border-bottom:1px solid rgba(244,228,193,.3)}
+.profile-name::placeholder{color:rgba(244,228,193,.5)}
+.profile-stats{display:flex;justify-content:center;gap:40px;padding:20px;border-bottom:1px solid rgba(244,228,193,.1)}
+.stat-item{text-align:center}
+.stat-number{display:block;font-size:1.5rem;color:#f4e4c1;font-family:'ZCOOL XiaoWei',serif}
+.stat-label{font-size:.8rem;color:rgba(244,228,193,.6)}
+.profile-menu{padding:20px}
+.profile-menu-item{display:flex;align-items:center;gap:14px;padding:16px;background:rgba(255,255,255,.05);border-radius:12px;margin-bottom:10px;color:#f4e4c1;cursor:pointer}
+.profile-menu-item:active{background:rgba(255,255,255,.1)}
+.profile-menu-item span:first-child{font-size:1.3rem}
+.profile-menu-item span:nth-child(2){flex:1}
+.menu-arrow{color:rgba(244,228,193,.4);font-size:1.2rem}
+.profile-footer{text-align:center;padding:30px 20px;color:rgba(244,228,193,.4);font-size:.85rem}
+.profile-footer p{margin:4px 0}
 `;
